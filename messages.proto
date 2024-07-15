@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package messages;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+enum STATE {
+	DEV_UNK = 0;
+	DEV_ACTIVE = 1;
+	DEV_INACTIVE = 2;
+	DEV_UNINHIBITED = 3;
+	DEV_INHIBITED = 4;
+}
+
+message container {
+	message DEVICE_STATE {
+		string device_name = 1;
+		STATE state = 2;
+		bool is_output = 3;
+	}
+
+	message DEVICE_STATES {
+		repeated DEVICE_STATE state = 1;
+	}
+
+	message SCHEDULED_DEVICE_EVENT {
+		google.protobuf.Timestamp timestamp = 1;
+		google.protobuf.Duration duration = 2;
+		google.protobuf.Duration period = 3;
+		DEVICE_STATE state = 4;
+	}
+
+	message SCHEDULED_DEVICE_EVENTS {
+		repeated SCHEDULED_DEVICE_EVENT event = 1;
+	}
+
+	oneof contents {
+		int32 heartbeat = 1;
+
+		DEVICE_STATE set_state = 2;
+		int32 get_states = 3;
+		DEVICE_STATES states = 4;
+
+		SCHEDULED_DEVICE_EVENT set_event = 5;
+		int32 get_events = 6;
+		SCHEDULED_DEVICE_EVENTS events = 7;
+		int32 no_events = 8;
+		SCHEDULED_DEVICE_EVENT cancel_event = 9;
+
+		int32 peak_logs = 10;
+		string logs = 11;
+
+		string info = 12;
+
+		DEVICE_STATE demo_override = 98;
+		int32 shutdown = 99;
+	}
+}
