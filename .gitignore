@@ -167,3 +167,6 @@ event_log.txt
 
 # Ignore JSONs
 *.json
+
+# Ignored autogenned devices.py
+devices.py
