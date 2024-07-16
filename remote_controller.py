@@ -1091,7 +1091,6 @@ class Ui_MainWindow(object):
         self.q_out_enqueue( container )
 
     def q_out_enqueue ( self, container ):
-        #print( container )
         self.q_out_lock.lock()
         self.q_out.put( container )
         self.q_out_lock.unlock()
