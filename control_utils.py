@@ -139,16 +139,16 @@ def does_schedule_conflict ( event_a, event_b ):
 
     # Check if any of the events are non-recurring (period = 0) and handle the special cases
     if event_f_period == 0:
-        return does_event_overlap( event_f_timestamp, event_f_duration, event_l_timestamp, event_l_period )
+        return does_event_overlap( event_f_timestamp, event_f_duration, event_l_timestamp, event_l_duration )
     elif event_l_period == 0:
         # Fast forward recurring event to nearest instance before non-recurring event
         event_f_timestamp = event_l_timestamp - ( ( event_l_timestamp - event_f_timestamp ) % event_f_period )
         # Check if they overlap
-        if does_event_overlap( event_f_timestamp, event_f_duration, event_l_timestamp, event_l_period ):
+        if does_event_overlap( event_f_timestamp, event_f_duration, event_l_timestamp, event_l_duration ):
             return True
         # Fast forward recurring event to the nearest instance after non-recurring event
         event_f_timestamp = event_f_timestamp + event_f_period
-        if does_event_overlap( event_f_timestamp, event_f_duration, event_l_timestamp, event_l_period ):
+        if does_event_overlap( event_f_timestamp, event_f_duration, event_l_timestamp, event_l_duration ):
             return True
         # Neither recurring instance nearest to the non-recurring event overlaps, we're good to go
         return False
@@ -160,13 +160,15 @@ def does_schedule_conflict ( event_a, event_b ):
     # Check all the possible collisions
     for start in starts:
         # Fast forward event to nearest
-        event_f_timestamp = starts - ( ( starts - event_f_timestamp ) % event_f_period )
+        event_f_timestamp = start - ( ( start - event_f_timestamp ) % event_f_period )
         # Check if they overlap
-        if does_event_overlap( event_f_timestamp, event_f_duration, start, event_l_period ):
+        if does_event_overlap( event_f_timestamp, event_f_duration, start, event_l_duration ):
+            print( event_f_timestamp, event_f_duration, start, event_l_period )
             return True
         # Fast forward recurring event to the nearest instance after non-recurring event
         event_f_timestamp = event_f_timestamp + event_f_period
-        if does_event_overlap( event_f_timestamp, event_f_duration, start, event_l_period ):
+        if does_event_overlap( event_f_timestamp, event_f_duration, start, event_l_duration ):
+            print( event_f_timestamp, event_f_duration, start, event_l_period )
             return True
 
     # Passed all checks, does not conflict

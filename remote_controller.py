@@ -44,6 +44,14 @@ STATE_TO_TEXT = {
     messages.STATE.DEV_INHIBITED: 'INHIBITED'
 }
 
+# Unit to seconds multiplier
+UNIT_TO_SECS = {
+    'sec': 1,
+    'min': 60,
+    'hour': 3600,
+    'day': 86400
+}
+
 def is_event_scheduled ( date_to_check, schedule ):
     # Is date in the past?
     dt_today = datetime.today()
@@ -261,7 +269,7 @@ class TableModel( QtCore.QAbstractTableModel ):
         dt_today = datetime.today()
         dt_clicked = self.dt
         dt_clicked_date = dt_clicked.date()
-        self.table = list( [ [ datetime.fromtimestamp( x.timestamp.seconds ).time(), x.duration.seconds // 60, x.period.seconds // 86400 ] for x in is_event_scheduled( dt_clicked_date, self.schedule )[0] ] )
+        self.table = list( [ [ datetime.fromtimestamp( x.timestamp.seconds ).time(), x.duration.seconds, x.period.seconds ] for x in is_event_scheduled( dt_clicked_date, self.schedule )[0] ] )
 
         self.table.sort()
 
@@ -275,9 +283,9 @@ class TableModel( QtCore.QAbstractTableModel ):
             if index.column() == 0:
                 return str( self.table[ index.row() ][ index.column() ].strftime( '%H:%M' ) )
             elif index.column() == 1:
-                return str( self.table[ index.row() ][ index.column() ] ) + ' mins'
+                return str( timedelta( seconds=self.table[ index.row() ][ index.column() ] ) )
             elif index.column() == 2:
-                return str( self.table[ index.row() ][ index.column() ] ) + ' days'
+                return str( timedelta( seconds=self.table[ index.row() ][ index.column() ] ) )
             else:
                 return str( self.table[ index.row() ][ index.column() ] )
         elif role == QtCore.Qt.ItemDataRole.EditRole:
@@ -313,6 +321,7 @@ class TableModel( QtCore.QAbstractTableModel ):
 class DaySchedule ( QtWidgets.QDialog ):
     send_signal = QtCore.pyqtSignal( [ messages.container ] )
     schedule = []
+    device_name = ''
 
     def __init__ ( self, parent=None, schedule=None, dt=None, device_name=None ):
         QtWidgets.QDialog.__init__( self, parent )
@@ -328,56 +337,78 @@ class DaySchedule ( QtWidgets.QDialog ):
         self.ui.btn_unsched.clicked.connect( self.unschedule_event )
 
     def schedule_event ( self ):
-        period = self.ui.hs_period.value()
-        duration = self.ui.hs_dur.value()
-        time = self.ui.te_d_tod.time()
+        period = self.ui.sb_period.value() * UNIT_TO_SECS[ self.ui.cb_period.currentText() ]
+        duration = self.ui.sb_dur.value() * UNIT_TO_SECS[ self.ui.cb_dur.currentText() ]
+        time = self.ui.te_tod.time()
         dt = datetime( year=self.dt.year, month=self.dt.month, day=self.dt.day, hour=time.hour(), minute=time.minute() )
-        td_dur = timedelta( minutes=duration )
-        td_period = timedelta( days=period )
         container = messages.container()
         container.set_event.timestamp.seconds = int( dt.timestamp() )
-        container.set_event.duration.FromTimedelta( td_dur )
-        container.set_event.period.FromTimedelta( td_period )
+        container.set_event.duration.seconds = duration
+        container.set_event.period.seconds = period
         container.set_event.state.device_name = self.device_name
-        # PLACE RADIO BUTTON FOR EVENT TYPE HERE
-        conatine.set_event.state.is_output = True
+        if self.ui.rb_activate.isChecked(): container.set_event.state.state = messages.STATE.DEV_ACTIVE
+        if self.ui.rb_inhibit.isChecked(): container.set_event.state.state = messages.STATE.DEV_INHIBITED
+        container.set_event.state.is_output = True
         self.send_signal.emit( container )
         container = messages.container()
-        container.get_events.SetInParent()
+        container.get_events = self.device_name
         self.send_signal.emit( container )
 
     def unschedule_event ( self ):
-        period = self.ui.hs_period.value()
-        duration = self.ui.hs_dur.value()
-        time = self.ui.te_d_tod.time()
+        period = self.ui.sb_period.value() * UNIT_TO_SECS[ self.ui.cb_period.currentText() ]
+        duration = self.ui.sb_dur.value() * UNIT_TO_SECS[ self.ui.cb_dur.currentText() ]
+        time = self.ui.te_tod.time()
         dt = datetime( year=self.dt.year, month=self.dt.month, day=self.dt.day, hour=time.hour(), minute=time.minute() )
-        td_dur = timedelta( minutes=duration )
-        td_period = timedelta( days=period )
         container = messages.container()
         container.cancel_event.timestamp.seconds = int( dt.timestamp() )
-        container.cancel_event.duration.FromTimedelta( td_dur )
-        container.cancel_event.period.FromTimedelta( td_period )
+        container.cancel_event.duration.seconds = duration
+        container.cancel_event.period.seconds = period
         container.cancel_event.state.device_name = self.device_name
-        # PLACE RADIO BUTTON FOR EVENT TYPE HERE
-        conatine.cancel_event.state.is_output = True
+        if self.ui.rb_activate.isChecked(): container.cancel_event.state.state = messages.STATE.DEV_ACTIVE
+        if self.ui.rb_inhibit.isChecked(): container.cancel_event.state.state = messages.STATE.DEV_INHIBITED
+        container.cancel_event.state.is_output = True
         self.send_signal.emit( container )
         container = messages.container()
-        container.get_events.SetInParent()
+        container.get_events = self.device_name
         self.send_signal.emit( container )
 
-    def set_schedule ( self, schedule ):
+    def set_schedule ( self, schedule, device_name ):
         self.schedule = schedule.copy()
+        self.device_name = device_name
         self.model = TableModel( self.dt, self.schedule )
         self.ui.tv_day_sched.setModel( self.model )
+        self.update()
+
+    def set_device_name ( self, device_name ):
+        self.device_name = device_name
 
     def copy_from_cell ( self, index ):
         time = self.model.table[ index.row() ][ 0 ]
         time = QtCore.QTime( time.hour, time.minute )
-        self.ui.te_d_tod.setTime( time )
+        self.ui.te_tod.setTime( time )
         dur = self.model.table[ index.row() ][ 1 ]
-        self.ui.hs_dur.setValue( dur )
+        if dur % 3600 == 0:
+            self.ui.sb_dur.setValue( dur // 3600 )
+            self.ui.cb_dur.setCurrentText( 'hour' )
+        elif dur % 60 == 0:
+            self.ui.sb_dur.setValue( dur // 60 )
+            self.ui.cb_dur.setCurrentText( 'min' )
+        else:
+            self.ui.sb_dur.setValue( dur )
+            self.ui.cb_dur.setCurrentText( 'sec' )
         period = self.model.table[ index.row() ][ 2 ]
-        self.ui.hs_period.setValue( period )
+        if period % 86400 == 0:
+            self.ui.sb_period.setValue( period // 86400 )
+            self.ui.cb_period.setCurrentText( 'day' )
+        elif period % 3600 == 0:
+            self.ui.sb_period.setValue( period // 3600 )
+            self.ui.cb_period.setCurrentText( 'hour' )
+        elif period % 60 == 0:
+            self.ui.sb_period.setValue( period // 60 )
+            self.ui.cb_period.setCurrentText( 'min' )
+        else:
+            self.ui.sb_period.setValue( period )
+            self.ui.cb_period.setCurrentText( 'sec' )
 ################################################################################################
 
 
@@ -386,13 +417,19 @@ class DaySchedule ( QtWidgets.QDialog ):
 class QPaintableCalendarWidget( QtWidgets.QCalendarWidget ):
     print_info_signal = QtCore.pyqtSignal( [ str ] )
     schedule = []
+    device_name = ''
 
     def __init__ ( self, parent ):
         QtWidgets.QCalendarWidget.__init__( self, parent )
 
     def set_schedule ( self, schedule, device_name ):
         self.schedule = schedule.copy()
+        self.device_name = device_name
         self.updateCells()
+        self.repaint()
+
+    def set_device_name ( self, device_name ):
+        self.device_name = device_name
 
     def paintCell ( self, painter, rect, date ):
         dt_today = datetime.today()
@@ -665,7 +702,7 @@ class Ui_MainWindow(object):
         self.updater = UpdateMonitor( self.q_in, self.q_in_lock )
         self.updater.device_update_signal.connect( self.device_update )
         self.updater.print_info_signal.connect( self.text_output.append )
-        #self.updater.save_schedule.connect( self.save_schedule )
+        self.updater.save_schedule.connect( self.save_schedule )
         self.updater.start()
 
         # Dictionaries for generated labels and radio buttons and schedules
@@ -708,6 +745,23 @@ class Ui_MainWindow(object):
 
         # Connect about button
         self.btn_about.pressed.connect( self.about )
+
+        # Connect calendar signals
+        self.cw_schedule.activated.connect( self.day_schedule_popup )
+        self.cw_schedule.print_info_signal.connect( self.text_output.append )
+
+        # Set background color of navigation bar of calendar
+        self.cw_schedule.setStyleSheet( "QCalendarWidget  QWidget#qt_calendar_navigationbar"
+                                        "{"
+                                        "background-color : darkGray;"
+                                        "}"
+                                        "QCalendarWidget  QWidget# qt_calendar_navigationbar::hover"
+                                        "{"
+                                        "background-color : darkGray;"
+                                        "}" )
+
+        # Initialize popup to None
+        self.popup = None
 
         # Print about text
         self.about()
@@ -859,11 +913,6 @@ class Ui_MainWindow(object):
         container.get_events = self.get_checked_output_name()
         self.q_out_enqueue( container )
 
-    def units_to_multiplier ( self, units ):
-        if units == 'hour': return 3600
-        elif units == 'min': return 60
-        elif units == 'sec': return 1
-
     def get_checked_output_name ( self ):
         for device in self.rb_dict:
             if self.rb_dict[ device ].isChecked():
@@ -872,7 +921,7 @@ class Ui_MainWindow(object):
     def activate_device ( self ):
         container = messages.container()
         if self.cb_dur.isChecked():
-            duration = self.sb_dur.value() * self.units_to_multiplier( self.cmb_dur.currentText() )
+            duration = self.sb_dur.value() * UNIT_TO_SECS[ self.cmb_dur.currentText() ]
             time_now = int( time.time() )
             container.set_event.timestamp.seconds = time_now
             container.set_event.duration.seconds = duration
@@ -903,7 +952,7 @@ class Ui_MainWindow(object):
     def inhibit_device ( self ):
         container = messages.container()
         if self.cb_dur.isChecked():
-            duration = self.sb_dur.value() * self.units_to_multiplier( self.cmb_dur.currentText() )
+            duration = self.sb_dur.value() * UNIT_TO_SECS[ self.cmb_dur.currentText() ]
             time_now = int( time.time() )
             container.set_event.timestamp.seconds = time_now
             container.set_event.duration.seconds = duration
@@ -942,6 +991,15 @@ class Ui_MainWindow(object):
         container.demo_override.is_output = False
         self.q_out_enqueue( container )
 
+    def radio_button_pressed ( self, checked ):
+        if checked:
+            for device in self.rb_dict:
+                if self.rb_dict[ device ].isChecked():
+                    self.cw_schedule.set_schedule( self.scheds[ device ], device )
+                    if self.popup:
+                        self.popup.set_schedule( self.scheds[ device ], device )
+                    self.print_schedule()
+
     def device_update ( self, device_states ):
         # Upon first update received from the server we use that info to set up our label and radio buttons
         if not self.updated:
@@ -951,7 +1009,10 @@ class Ui_MainWindow(object):
                 label.hide()
                 if label.receivers( label.clicked ) > 0:
                     label.clicked.disconnect()
-            for button in self.rbs_outputs: button.hide()
+            for button in self.rbs_outputs:
+                button.hide()
+                if button.receivers( button.toggled ) > 0:
+                    button.toggled.disconnect()
             # Initialize counters
             dev_count = 0
             output_count = 0
@@ -967,6 +1028,7 @@ class Ui_MainWindow(object):
                 if state.is_output:
                     self.rbs_outputs[ output_count ].setText( state.device_name )
                     self.rbs_outputs[ output_count ].show()
+                    self.rbs_outputs[ output_count ].toggled.connect( self.radio_button_pressed )
                     self.rb_dict[ state.device_name ] = self.rbs_outputs[ output_count ]
                     self.scheds[ state.device_name ] = []
                     output_count = output_count + 1
@@ -986,11 +1048,12 @@ class Ui_MainWindow(object):
     def save_schedule ( self, schedule ):
         for device in self.scheds:
             dev_sched = [ event for event in schedule if event.state.device_name == device ]
-            if not are_schedules_same( self.sched[ device ], dev_sched ):
-                self.sched[ device ] = dev_sched.copy()
-                self.cw_schedule.set_schedule( dev_sched )
-                if self.popup:
-                    self.popup.set_schedule( dev_sched )
+            if not are_schedules_same( self.scheds[ device ], dev_sched ):
+                self.scheds[ device ] = dev_sched.copy()
+                if self.get_checked_output_name() == device:
+                    self.cw_schedule.set_schedule( dev_sched, device )
+                    if self.popup:
+                        self.popup.set_schedule( dev_sched, device )
                 self.print_schedule()
 
     def print_schedule ( self ):
@@ -1003,12 +1066,20 @@ class Ui_MainWindow(object):
             dt = datetime.fromtimestamp( event.timestamp.seconds )
             td_dur = timedelta( seconds=event.duration.seconds )
             td_period = timedelta( seconds=event.period.seconds )
-            self.text_output.append( STATE_TO_TEXT[event.state.state] + 'event scheduled for ' + str( td_dur.seconds // 60 ) + ' minute(s) on ' + str( dt ) + ' repeating every ' + str( td_period.days ) + ' day(s)' )
+            self.text_output.append( STATE_TO_TEXT[event.state.state] + ' event scheduled for ' + str( td_dur.seconds // 60 ) + ' minute(s) on ' + str( dt ) + ' repeating every ' + str( td_period.days ) + ' day(s)' )
 
     def peak_event_log ( self ):
         container = tool_shed.container()
         container.peak_event_log = 10
         self.q_out_enqueue( container )
+
+    def day_schedule_popup ( self, date ):
+        dt = datetime( year=date.year(), month=date.month(), day=date.day() )
+        device_name = self.get_checked_output_name()
+        self.popup = DaySchedule( self.centralwidget, self.cw_schedule.schedule, dt=dt, device_name=device_name )
+        self.popup.setWindowTitle( str( dt.date() ) + ' Schedule for ' + device_name )
+        self.popup.send_signal.connect( self.q_out_enqueue )
+        self.popup.exec()
 
     def postpone_pulse_mon ( self ):
         if self.pulse_mon.isActive():
@@ -1020,7 +1091,7 @@ class Ui_MainWindow(object):
         self.q_out_enqueue( container )
 
     def q_out_enqueue ( self, container ):
-        print( container )
+        #print( container )
         self.q_out_lock.lock()
         self.q_out.put( container )
         self.q_out_lock.unlock()

@@ -87,7 +87,7 @@ class Controller:
                         # Reschedule active event if neccessary
                         if event.period.seconds > 0:
                             event.timestamp.seconds = event.timestamp.seconds + event.period.seconds
-                            heapq.heappush( self.scheds[ device ] ( event.timestamp.seconds, event ) )
+                            heapq.heappush( self.scheds[ device ], ( event.timestamp.seconds, event ) )
                     elif event.state.state == messages.STATE.DEV_INACTIVE:
                         if cur_state:
                             cur_state = devices.stop( device )
@@ -119,7 +119,7 @@ class Controller:
                         # Reschedule inhibit event if neccessary
                         if event.period.seconds > 0:
                             event.timestamp.seconds = event.timestamp.seconds + event.period.seconds
-                            heapq.heappush( self.scheds[ device ] ( event.timestamp.seconds, event ) )
+                            heapq.heappush( self.scheds[ device ], ( event.timestamp.seconds, event ) )
                     
                     utils.save_schedule( self.scheds[ event.state.device_name ], self.scheds_files[ event.state.device_name ] )
 
@@ -216,14 +216,14 @@ class Controller:
         num_events = 0
         container = messages.container()
         if self.scheds[ device ] and self.scheds[ device ][ 0 ][ 1 ].state.state != messages.STATE.DEV_INACTIVE and self.scheds[ device ][ 0 ][ 1 ].state.state != messages.STATE.DEV_UNINHIBITED:
-            for _, event in self.scheds[ device ][ 1: ]:
-                event = container.events.event.add()
-                event.CopyFrom( event )
+            for _, event in self.scheds[ device ]:
+                event_out = container.events.event.add()
+                event_out.CopyFrom( event )
                 num_events = num_events + 1
         elif self.scheds[ device ]:
-            for _, event in self.scheds[ device ]:
-                event = container.events.event.add()
-                event.CopyFrom( event )
+            for _, event in self.scheds[ device ][ 1: ]:
+                event_out = container.events.event.add()
+                event_out.CopyFrom( event )
                 num_events = num_events + 1
         if num_events == 0:
             container.no_events = device
@@ -235,14 +235,14 @@ class Controller:
         container = messages.container()
         for device in self.outputs:
             if self.scheds[ device ] and self.scheds[ device ][ 0 ][ 1 ].state.state != messages.STATE.DEV_INACTIVE and self.scheds[ device ][ 0 ][ 1 ].state.state != messages.STATE.DEV_UNINHIBITED:
-                for _, event in self.scheds[ device ][ 1: ]:
-                    event = container.events.event.add()
-                    event.CopyFrom( event )
+                for _, event in self.scheds[ device ]:
+                    event_out = container.events.event.add()
+                    event_out.CopyFrom( event )
                     num_events = num_events + 1
             elif self.scheds[ device ]:
-                for _, event in self.scheds[ device ]:
-                    event = container.events.event.add()
-                    event.CopyFrom( event )
+                for _, event in self.scheds[ device ][ 1: ]:
+                    event_out = container.events.event.add()
+                    event_out.CopyFrom( event )
                     num_events = num_events + 1
         if num_events == 0:
             container.no_events = ''
