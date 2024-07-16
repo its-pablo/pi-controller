@@ -859,23 +859,20 @@ class Ui_MainWindow(object):
             for state in device_states.state:
                 self.lbls_devices[ dev_count ].setText( state.device_name + ':' )
                 self.lbls_devices[ dev_count ].show()
-                text, palette = self.state_to_text_and_palette( state.state )
-                self.lbls_device_states[ dev_count ].setText( text )
-                self.lbls_device_states[ dev_count ].setPalette( palette )
                 self.lbls_device_states[ dev_count ].show()
                 self.lbl_dict[ state.device_name ] = self.lbls_device_states[ dev_count ]
                 # If in demo mode, connect to toggle slot
                 if self.demo_mode and not state.is_output:
                     self.lbl_dict[ state.device_name ].set_device_name( state.device_name )
                     self.lbl_dict[ state.device_name ].clicked.connect( self.toggle_sensor )
-                dev_count = dev_count + 1
                 if state.is_output:
                     self.rbs_outputs[ output_count ].setText( state.device_name )
                     self.rbs_outputs[ output_count ].show()
                     self.rb_dict[ state.device_name ] = self.rbs_outputs[ output_count ]
                     output_count = output_count + 1
-                if output_count > 0:
-                    self.rbs_outputs[ 0 ].setChecked( True )
+                dev_count = dev_count + 1
+            if output_count > 0:
+                self.rbs_outputs[ 0 ].setChecked( True )
             self.updated = True
         # Normal operation, just display updated state of devices
         for state in device_states.state:
