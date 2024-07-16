@@ -47,7 +47,7 @@ class Controller:
             self.scheds_files[ device ] = BASE_PATH / ( device + self.s_file_name_suffix )
             utils.initialize_schedule( self.scheds[ device ], self.scheds_files[ device ] )
             if self.scheds[ device ]:
-                self.inhibits[ device ] = ( self.scheds[ device ][ 0 ][ 1 ].device_state.state == messages.STATE.DEV_UNINHIBITED )
+                self.inhibits[ device ] = ( self.scheds[ device ][ 0 ][ 1 ].state.state == messages.STATE.DEV_UNINHIBITED )
             else:
                 self.inhibits[ device ] = False
     
@@ -73,22 +73,22 @@ class Controller:
                             if cur_state:
                                 print( device, 'is now active' )
                                 utils.log_event( device + ' IS NOW ACTIVE', self.el_file_name )
+                                # Schedule new inactive event if neccessary
+                                if event.duration.seconds > 0:
+                                    new_event = messages.container.SCHEDULED_DEVICE_EVENT()
+                                    new_event.CopyFrom( event )
+                                    new_event.timestamp.seconds = event.timestamp.seconds + event.duration.seconds
+                                    new_event.duration.seconds = 0
+                                    new_event.period.seconds = 0
+                                    new_event.state.state = messages.STATE.DEV_INACTIVE
+                                    heapq.heappush( self.scheds[ device ], ( new_event.timestamp.seconds, new_event ) )
                         else:
                             print( device, 'device is already active' )
-                        # Schedule new inactive event if neccessary
-                        if event.duration.seconds > 0:
-                            new_event = messages.container.SCHEDULED_DEVICE_EVENT()
-                            new_event.CopyFrom( event )
-                            new_event.timestamp.seconds = event.timestamp.seconds + event.duration.seconds
-                            new_event.duration.seconds = 0
-                            new_event.period.seconds = 0
-                            new_event.device_state.state = messages.STATE.DEV_INACTIVE
-                            heapq.heappush( self.scheds[ device ], ( new_event.timestamp.seconds, new_event ) )
                         # Reschedule active event if neccessary
                         if event.period.seconds > 0:
                             event.timestamp.seconds = event.timestamp.seconds + event.period.seconds
                             heapq.heappush( self.scheds[ device ] ( event.timestamp.seconds, event ) )
-                    elif event.device_state.state == messages.STATE.DEV_INACTIVE:
+                    elif event.state.state == messages.STATE.DEV_INACTIVE:
                         if cur_state:
                             cur_state = devices.stop( device )
                             if not cur_state:
@@ -114,7 +114,7 @@ class Controller:
                             new_event.timestamp.seconds = event.timestamp.seconds + event.duration.seconds
                             new_event.duration.seconds = 0
                             new_event.period.seconds = 0
-                            new_event.device_state.state = messages.STATE.DEV_UNINHIBITED
+                            new_event.state.state = messages.STATE.DEV_UNINHIBITED
                             heapq.heappush( self.scheds[ device ], ( new_event.timestamp.seconds, new_event ) )
                         # Reschedule inhibit event if neccessary
                         if event.period.seconds > 0:
@@ -150,8 +150,8 @@ class Controller:
         # If state active and not inhibited
         if state.state == messages.STATE.DEV_ACTIVE and not self.inhibits[ state.device_name ]:
             # If there is a scheduled inactive event remove it
-            if self.scheds[ devices ] and self.scheds[ devices ][ 0 ][ 1 ].state.state == messages.STATE.DEV_INACTIVE:
-                heapq.heappop( self.scheds[ devices ] )
+            if self.scheds[ state.device_name ] and self.scheds[ state.device_name ][ 0 ][ 1 ].state.state == messages.STATE.DEV_INACTIVE:
+                heapq.heappop( self.scheds[ state.device_name ] )
             pre_state = self.devices[ state.device_name ][ 1 ]()
             post_state = devices.start( state.device_name )
             if pre_state != post_state:
@@ -160,8 +160,8 @@ class Controller:
         # If state is inactive, deactivate
         elif state.state == messages.STATE.DEV_INACTIVE:
             # If there is a scheduled inactive event remove it
-            if self.scheds[ devices ] and self.scheds[ devices ][ 0 ][ 1 ].state.state == messages.STATE.DEV_INACTIVE:
-                heapq.heappop( self.scheds[ devices ] )
+            if self.scheds[ state.device_name ] and self.scheds[ state.device_name ][ 0 ][ 1 ].state.state == messages.STATE.DEV_INACTIVE:
+                heapq.heappop( self.scheds[ state.device_name ] )
             pre_state = self.devices[ state.device_name ][ 1 ]()
             post_state = devices.stop( state.device_name )
             if pre_state != post_state:
@@ -171,16 +171,20 @@ class Controller:
         elif state.state == messages.STATE.DEV_UNINHIBITED:
             self.inhibits[ state.device_name ] = False
             # If there is a scheduled uninhibit event remove it
-            if self.scheds[ devices ] and self.scheds[ devices ][ 0 ][ 1 ].state.state == messages.STATE.DEV_UNINHIBITED:
-                heapq.heappop( self.scheds[ devices ] )
-        # If state is inhibit, inhibit
-        elif state.state == messages.STATE.DEV_INHIBIT:
+            if self.scheds[ state.device_name ] and self.scheds[ state.device_name ][ 0 ][ 1 ].state.state == messages.STATE.DEV_UNINHIBITED:
+                heapq.heappop( self.scheds[ state.device_name ] )
+        # If state is inhibited, inhibit
+        elif state.state == messages.STATE.DEV_INHIBITED:
             self.inhibits[ state.device_name ] = True
             # If there is a scheduled inactive event remove it
-            if self.scheds[ devices ] and self.scheds[ devices ][ 0 ][ 1 ].state.state == messages.STATE.DEV_INACTIVE:
-                heapq.heappop( self.scheds[ devices ] )
+            if self.scheds[ state.device_name ] and self.scheds[ state.device_name ][ 0 ][ 1 ].state.state == messages.STATE.DEV_INACTIVE:
+                heapq.heappop( self.scheds[ state.device_name ] )
             # Turn off the device
-            devices.stop( state.device_name )
+            pre_state = self.devices[ state.device_name ][ 1 ]()
+            post_state = devices.stop( state.device_name )
+            if pre_state != post_state:
+                print( state.device_name, 'is now inactive' )
+                utils.log_event( state.device_name + ' IS NOW INACTIVE', self.el_file_name )
     
     # Get device states
     def get_device_states ( self ):
@@ -200,29 +204,48 @@ class Controller:
     # Schedule an event
     def schedule_event ( self, event ):
         for _, scheduled_event in self.scheds[ event.state.device_name ]:
-            if scheduled_event.state.state != messages.STATE.DEV_INACTIVE and scheduled_event.state.state != messages.STATE.DEV_UNINHIBITED and utils.does_schedule_conflict( event, scheduled_event ):
+            #if scheduled_event.state.state != messages.STATE.DEV_INACTIVE and scheduled_event.state.state != messages.STATE.DEV_UNINHIBITED and utils.does_schedule_conflict( event, scheduled_event ):
+            if utils.does_schedule_conflict( event, scheduled_event ):
                 return ( False, scheduled_event )
         heapq.heappush( self.scheds[ event.state.device_name ], ( event.timestamp.seconds, event ) )
         utils.save_schedule( self.scheds[ event.state.device_name ], self.scheds_files[ event.state.device_name ] )
         return ( True, None )
 
+    # Get events scheduled for a device
+    def get_scheduled_events ( self, device ):
+        num_events = 0
+        container = messages.container()
+        if self.scheds[ device ] and self.scheds[ device ][ 0 ][ 1 ].state.state != messages.STATE.DEV_INACTIVE and self.scheds[ device ][ 0 ][ 1 ].state.state != messages.STATE.DEV_UNINHIBITED:
+            for _, event in self.scheds[ device ][ 1: ]:
+                event = container.events.event.add()
+                event.CopyFrom( event )
+                num_events = num_events + 1
+        elif self.scheds[ device ]:
+            for _, event in self.scheds[ device ]:
+                event = container.events.event.add()
+                event.CopyFrom( event )
+                num_events = num_events + 1
+        if num_events == 0:
+            container.no_events = device
+        return container
+    
     # Get all scheduled events
     def get_all_scheduled_events ( self ):
         num_events = 0
         container = messages.container()
         for device in self.outputs:
             if self.scheds[ device ] and self.scheds[ device ][ 0 ][ 1 ].state.state != messages.STATE.DEV_INACTIVE and self.scheds[ device ][ 0 ][ 1 ].state.state != messages.STATE.DEV_UNINHIBITED:
-                for _, event in self.scheds[ devices ][ 1: ]:
+                for _, event in self.scheds[ device ][ 1: ]:
                     event = container.events.event.add()
                     event.CopyFrom( event )
                     num_events = num_events + 1
             elif self.scheds[ device ]:
-                for _, event in self.scheds[ devices ]:
+                for _, event in self.scheds[ device ]:
                     event = container.events.event.add()
                     event.CopyFrom( event )
                     num_events = num_events + 1
         if num_events == 0:
-            container.no_events = 1
+            container.no_events = ''
         return container
 
     # Cancel scheduled event

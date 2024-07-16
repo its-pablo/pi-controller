@@ -46,8 +46,7 @@ def control_loop( q_in, q_out, kill, s_file_name_suffix, el_file_name, demo_mode
 				controller.set_device_state( container.set_state )
 
 			elif container.HasField( 'get_states' ):
-				container.CopyFrom( controller.get_device_states() )
-				q_out.put( container )
+				q_out.put( controller.get_device_states() )
 
 			elif container.HasField( 'set_event' ):
 				success, conflicting_event = controller.schedule_event( container.set_event )
@@ -56,17 +55,18 @@ def control_loop( q_in, q_out, kill, s_file_name_suffix, el_file_name, demo_mode
 					msg = 'Failed to schedule event, conflicted with another event!'
 					container.info = msg
 					q_out.put( container )
-
+			
 			elif container.HasField( 'get_events' ):
-				container.CopyFrom( controller.get_all_scheduled_events() )
-				q_out.put( container )
+				q_out.put( controller.get_scheduled_events( container.get_events ) )
+
+			elif container.HasField( 'get_all_events' ):
+				q_out.put( controller.get_all_scheduled_events() )
 
 			elif container.HasField( 'cancel_event' ):
 				controller.cancel_scheduled_event( container.cancel_event )
 
 			elif container.HasField( 'peak_logs' ):
-				container.CopyFrom( controller.peak_event_log() )
-				q_out.put( container )
+				q_out.put( controller.peak_event_log() )
 
 			# Secret option
 			elif container.HasField( 'demo_override' ):

@@ -10,10 +10,9 @@ from google.protobuf.json_format import Parse
 from math import lcm
 
 # Function for writing protocol buffer message to JSON
-def write_message_to_json ( message, file_name ):
-    json_message = MessageToJson( message )
+def write_message ( message, file_name ):
     with open( file_name, 'w', encoding='utf-8' ) as file:
-        file.write( json_message )
+        file.write( message )
 
 # Save schedule queue
 def save_schedule ( schedule, file_name ):
@@ -22,10 +21,14 @@ def save_schedule ( schedule, file_name ):
         # Concat all queues into message and write to JSON
         container = messages.container()
         for _, event in schedule:
-            event_container = container.events.add()
+            event_container = container.events.event.add()
             event_container.CopyFrom( event )
+        # Generate JSON
+        json_message = MessageToJson( container )
         # Write to file
-        write_message_to_json( container, file_name )
+        write_message( json_message, file_name )
+    else:
+        write_message( '', file_name )
 
 # Log an event to log file
 def log_event ( event, file_name ):
@@ -66,23 +69,24 @@ def initialize_schedule ( schedule_queue, file_name ):
     if os.path.isfile( file_name ):
         with open( file_name, 'r', encoding='utf-8' ) as file:
             json_message = file.read()
-            container = messages.container()
-            container = Parse( json_message, container )
-            time_now = int( time.time() )
+            if json_message:
+                container = messages.container()
+                container = Parse( json_message, container )
+                time_now = int( time.time() )
 
-            for event in container.events.event:
-                time_scheduled = event.timestamp.seconds
-                period_scheduled = event.period.seconds
+                for event in container.events.event:
+                    time_scheduled = event.timestamp.seconds
+                    period_scheduled = event.period.seconds
 
-                # Not expired put back in queue as is
-                if time_scheduled > time_now:
-                    heapq.heappush( schedule_queue, ( time_scheduled, event ) )
+                    # Not expired put back in queue as is
+                    if time_scheduled > time_now:
+                        heapq.heappush( schedule_queue, ( time_scheduled, event ) )
 
-                # Expired but periodic
-                elif period_scheduled > 0:
-                    time_scheduled = time_scheduled + ( period_scheduled * ( ( ( time_now - time_scheduled ) // period_scheduled ) + 1 ) )
-                    event.timestamp.seconds = time_scheduled
-                    heapq.heappush( schedule_queue, ( time_scheduled, event ) )
+                    # Expired but periodic
+                    elif period_scheduled > 0:
+                        time_scheduled = time_scheduled + ( period_scheduled * ( ( ( time_now - time_scheduled ) // period_scheduled ) + 1 ) )
+                        event.timestamp.seconds = time_scheduled
+                        heapq.heappush( schedule_queue, ( time_scheduled, event ) )
 
         # Save schedule changes
         save_schedule( schedule_queue, file_name )
@@ -118,7 +122,7 @@ def does_schedule_conflict ( event_a, event_b ):
     if event_a.timestamp.seconds < event_b.timestamp.seconds:
         event_f = event_a
         event_l = event_b
-    elif event_b.timestamp < event_a.timestamp.seconds:
+    elif event_b.timestamp.seconds < event_a.timestamp.seconds:
         event_f = event_b
         event_l = event_a
     # Events occur at the same time, they overlap!

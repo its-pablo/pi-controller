@@ -36,6 +36,14 @@ day_map = {
     6: 'Sunday'
 }
 
+# State to text map
+STATE_TO_TEXT = {
+    messages.STATE.DEV_ACTIVE: 'ACTIVE',
+    messages.STATE.DEV_INACTIVE: 'INACTIVE',
+    messages.STATE.DEV_UNINHIBITED: 'UNINHIBITED',
+    messages.STATE.DEV_INHIBITED: 'INHIBITED'
+}
+
 def is_event_scheduled ( date_to_check, schedule ):
     # Is date in the past?
     dt_today = datetime.today()
@@ -214,6 +222,9 @@ class UpdateMonitor ( QtCore.QThread ):
                     else:
                         self.print_info_signal.emit( 'LOGS:' )
                         self.print_info_signal.emit( container.logs[ :-1 ] )
+
+                elif container.HasField( 'info' ):
+                    self.print_info_signal.emit( container.info )
 
             else:
                 self.q_in_lock.unlock()
@@ -470,6 +481,7 @@ class Ui_MainWindow(object):
         self.gb_controls = QtWidgets.QGroupBox(parent=self.widget_controls)
         self.gb_controls.setObjectName("gb_controls")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.gb_controls)
+        self.verticalLayout_2.setContentsMargins(-1, 0, -1, -1)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         # ADD HIDDEN RADIO BUTTONS HERE, UP TO 28 POSSIBLE GPIO PINS
         self.rbs_outputs = []
@@ -479,27 +491,28 @@ class Ui_MainWindow(object):
             self.rbs_outputs[ i ].setText("Output " + str( i ))
             self.rbs_outputs[ i ].hide()
             self.verticalLayout_2.addWidget(self.rbs_outputs[ i ])
-        self.widget_3 = QtWidgets.QWidget(parent=self.gb_controls)
-        self.widget_3.setObjectName("widget_3")
-        self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.widget_3)
-        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        self.lbl_dur = QtWidgets.QLabel(parent=self.widget_3)
-        self.lbl_dur.setObjectName("lbl_dur")
-        self.horizontalLayout_2.addWidget(self.lbl_dur)
-        self.sb_dur = QtWidgets.QSpinBox(parent=self.widget_3)
+        self.gb_dur = QtWidgets.QGroupBox(parent=self.gb_controls)
+        self.gb_dur.setObjectName("gb_dur")
+        self.horizontalLayout = QtWidgets.QHBoxLayout(self.gb_dur)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.sb_dur = QtWidgets.QSpinBox(parent=self.gb_dur)
+        self.sb_dur.setMaximumSize(QtCore.QSize(50, 16777215))
         self.sb_dur.setMinimum(1)
+        self.sb_dur.setMaximum(999999999)
         self.sb_dur.setObjectName("sb_dur")
-        self.horizontalLayout_2.addWidget(self.sb_dur)
-        self.lbl_dur_units = QtWidgets.QLabel(parent=self.widget_3)
-        self.lbl_dur_units.setObjectName("lbl_dur_units")
-        self.horizontalLayout_2.addWidget(self.lbl_dur_units)
-        self.cb_dur = QtWidgets.QCheckBox(parent=self.widget_3)
+        self.horizontalLayout.addWidget(self.sb_dur)
+        self.cmb_dur = QtWidgets.QComboBox(parent=self.gb_dur)
+        self.cmb_dur.setMaximumSize(QtCore.QSize(50, 16777215))
+        self.cmb_dur.setObjectName("cmb_dur")
+        self.cmb_dur.addItems( [ 'hour', 'min', 'sec' ] )
+        self.cmb_dur.setCurrentText("min")
+        self.horizontalLayout.addWidget(self.cmb_dur)
+        self.cb_dur = QtWidgets.QCheckBox(parent=self.gb_dur)
         self.cb_dur.setText("")
         self.cb_dur.setChecked(False)
         self.cb_dur.setObjectName("cb_dur")
-        self.horizontalLayout_2.addWidget(self.cb_dur)
-        self.verticalLayout_2.addWidget(self.widget_3)
+        self.horizontalLayout.addWidget(self.cb_dur)
+        self.verticalLayout_2.addWidget(self.gb_dur)
         self.btn_activate = QtWidgets.QPushButton(parent=self.gb_controls)
         self.btn_activate.setObjectName("btn_activate")
         self.verticalLayout_2.addWidget(self.btn_activate)
@@ -523,12 +536,12 @@ class Ui_MainWindow(object):
         self.btn_log = QtWidgets.QPushButton(parent=self.gb_misc)
         self.btn_log.setObjectName("btn_log")
         self.verticalLayout_8.addWidget(self.btn_log)
-        self.btn_about = QtWidgets.QPushButton(parent=self.gb_misc)
-        self.btn_about.setObjectName("btn_about")
-        self.verticalLayout_8.addWidget(self.btn_about)
         self.btn_shutdown = QtWidgets.QPushButton(parent=self.gb_misc)
         self.btn_shutdown.setObjectName("btn_shutdown")
         self.verticalLayout_8.addWidget(self.btn_shutdown)
+        self.btn_about = QtWidgets.QPushButton(parent=self.gb_misc)
+        self.btn_about.setObjectName("btn_about")
+        self.verticalLayout_8.addWidget(self.btn_about)
         self.verticalLayout_3.addWidget(self.gb_misc)
         self.gridLayout_4.addWidget(self.widget_controls, 0, 0, 1, 1)
         self.widget_status = QtWidgets.QWidget(parent=self.centralwidget)
@@ -655,10 +668,10 @@ class Ui_MainWindow(object):
         #self.updater.save_schedule.connect( self.save_schedule )
         self.updater.start()
 
-        # Dictionaries for generated labels and radio buttons
+        # Dictionaries for generated labels and radio buttons and schedules
         self.rb_dict = {}
         self.lbl_dict = {}
-        self.devices = []
+        self.scheds = {}
 
         # Set updated flag to false
         self.updated = False
@@ -675,6 +688,27 @@ class Ui_MainWindow(object):
         # Initialize schedule to None
         self.schedule = None
 
+        # Connect activate button
+        self.btn_activate.pressed.connect( self.activate_device )
+
+        # Connect deactivate button
+        self.btn_deactivate.pressed.connect( self.deactivate_device )
+
+        # Connect uninhibit button
+        self.btn_uninhib.pressed.connect( self.uninhibit_device )
+
+        # Connect inhibit button
+        self.btn_inhib.pressed.connect( self.inhibit_device )
+
+        # Connect print schedules button
+        self.btn_get_sched.pressed.connect( self.print_schedule )
+
+        # Connect peak event log button
+        self.btn_log.pressed.connect( self.peak_event_log )
+
+        # Connect about button
+        self.btn_about.pressed.connect( self.about )
+
         # Print about text
         self.about()
 
@@ -686,17 +720,17 @@ class Ui_MainWindow(object):
         self.lbl_port.setText(_translate("MainWindow", "Port:"))
         self.btn_connect.setText(_translate("MainWindow", "Connect"))
         self.gb_controls.setTitle(_translate("MainWindow", "Controls"))
-        self.lbl_dur.setText(_translate("MainWindow", "Duration"))
-        self.lbl_dur_units.setText(_translate("MainWindow", "min"))
+        self.gb_dur.setTitle(_translate("MainWindow", "Event Duration"))
+        self.cmb_dur.setPlaceholderText(_translate("MainWindow", "min"))
         self.btn_activate.setText(_translate("MainWindow", "Activate"))
-        self.btn_deactivate.setText(_translate("MainWindow", "Deactive"))
+        self.btn_deactivate.setText(_translate("MainWindow", "Deactivate"))
         self.btn_uninhib.setText(_translate("MainWindow", "Uninhibit"))
         self.btn_inhib.setText(_translate("MainWindow", "Inhibit"))
-        self.btn_get_sched.setText(_translate("MainWindow", "Get Schedule"))
+        self.btn_get_sched.setText(_translate("MainWindow", "Print Schedule"))
         self.gb_misc.setTitle(_translate("MainWindow", "Miscellaneous"))
         self.btn_log.setText(_translate("MainWindow", "Peak Event Log"))
-        self.btn_about.setText(_translate("MainWindow", "About"))
         self.btn_shutdown.setText(_translate("MainWindow", "Shutdown"))
+        self.btn_about.setText(_translate("MainWindow", "About"))
         self.gb_status.setTitle(_translate("MainWindow", "Status"))
         self.gb_calendar.setTitle(_translate("MainWindow", "Schedule"))
         self.gb_output.setTitle(_translate("MainWindow", "Output"))
@@ -723,7 +757,6 @@ class Ui_MainWindow(object):
             self.receiver.lost_conn.connect( self.disconnect )
             self.receiver.server_alive.connect( self.postpone_pulse_mon )
             self.heartbeat.timeout.connect( self.get_device_updates )
-            #self.heartbeat.timeout.connect( self.get_schedule )
             self.pulse_mon.timeout.connect( self.disconnect )
 
             # Start comms threads
@@ -734,7 +767,6 @@ class Ui_MainWindow(object):
 
             # If none of that raised an exception then we connected
             self.gb_connection.setEnabled( False )
-            self.gb_controls.setEnabled( True )
             self.gb_status.setEnabled( True )
             self.gb_calendar.setEnabled( True )
             self.btn_log.setEnabled( True )
@@ -764,6 +796,10 @@ class Ui_MainWindow(object):
         # Stop timers
         self.heartbeat.stop()
 
+        # Disconnect heartbeat timeout
+        if self.heartbeat.receivers( self.heartbeat.timeout ) > 0:
+            self.heartbeat.timeout.disconnect()
+
         # Request comms threads stop
         self.sender.requestInterruption()
         self.receiver.requestInterruption()
@@ -784,6 +820,11 @@ class Ui_MainWindow(object):
 
         # Set the device out of date flag
         self.updated = False
+
+        # Clear dictionaries
+        self.rb_dict = {}
+        self.lbl_dict = {}
+        self.scheds = {}
 
         # Reset queues
         def empty_queue ( q ):
@@ -808,14 +849,72 @@ class Ui_MainWindow(object):
     def about ( self ):
         self.text_output.append( ABOUT_STR )
 
-    def q_out_enqueue ( self, container ):
-        self.q_out_lock.lock()
-        self.q_out.put( container )
-        self.q_out_lock.unlock()
-
     def get_device_updates ( self ):
         container = messages.container()
         container.get_states = 1
+        self.q_out_enqueue( container )
+
+    def get_schedule ( self ):
+        container = messages.container()
+        container.get_events = self.get_checked_output_name()
+        self.q_out_enqueue( container )
+
+    def units_to_multiplier ( self, units ):
+        if units == 'hour': return 3600
+        elif units == 'min': return 60
+        elif units == 'sec': return 1
+
+    def get_checked_output_name ( self ):
+        for device in self.rb_dict:
+            if self.rb_dict[ device ].isChecked():
+                return device
+
+    def activate_device ( self ):
+        container = messages.container()
+        if self.cb_dur.isChecked():
+            duration = self.sb_dur.value() * self.units_to_multiplier( self.cmb_dur.currentText() )
+            time_now = int( time.time() )
+            container.set_event.timestamp.seconds = time_now
+            container.set_event.duration.seconds = duration
+            container.set_event.period.seconds = 0
+            container.set_event.state.device_name = self.get_checked_output_name()
+            container.set_event.state.state = messages.STATE.DEV_ACTIVE
+            container.set_event.state.is_output = True
+        else:
+            container.set_state.device_name = self.get_checked_output_name()
+            container.set_state.state = messages.STATE.DEV_ACTIVE
+            container.set_state.is_output = True
+        self.q_out_enqueue( container )
+
+    def deactivate_device ( self ):
+        container = messages.container()
+        container.set_state.device_name = self.get_checked_output_name()
+        container.set_state.state = messages.STATE.DEV_INACTIVE
+        container.set_state.is_output = True
+        self.q_out_enqueue( container )
+
+    def uninhibit_device ( self ):
+        container = messages.container()
+        container.set_state.device_name = self.get_checked_output_name()
+        container.set_state.state = messages.STATE.DEV_UNINHIBITED
+        container.set_state.is_output = True
+        self.q_out_enqueue( container )
+
+    def inhibit_device ( self ):
+        container = messages.container()
+        if self.cb_dur.isChecked():
+            duration = self.sb_dur.value() * self.units_to_multiplier( self.cmb_dur.currentText() )
+            time_now = int( time.time() )
+            container.set_event.timestamp.seconds = time_now
+            container.set_event.duration.seconds = duration
+            container.set_event.period.seconds = 0
+            container.set_event.state.device_name = self.get_checked_output_name()
+            container.set_event.state.state = messages.STATE.DEV_INHIBITED
+            container.set_event.state.is_output = True
+        else:
+            container.set_state.device_name = self.get_checked_output_name()
+            container.set_state.state = messages.STATE.DEV_INHIBITED
+            container.set_state.is_output = True
         self.q_out_enqueue( container )
 
     def state_to_text_and_palette ( self, state ):
@@ -869,10 +968,13 @@ class Ui_MainWindow(object):
                     self.rbs_outputs[ output_count ].setText( state.device_name )
                     self.rbs_outputs[ output_count ].show()
                     self.rb_dict[ state.device_name ] = self.rbs_outputs[ output_count ]
+                    self.scheds[ state.device_name ] = []
                     output_count = output_count + 1
                 dev_count = dev_count + 1
             if output_count > 0:
                 self.rbs_outputs[ 0 ].setChecked( True )
+                self.gb_controls.setEnabled( True )
+                self.heartbeat.timeout.connect( self.get_schedule )
             self.updated = True
         # Normal operation, just display updated state of devices
         for state in device_states.state:
@@ -880,6 +982,33 @@ class Ui_MainWindow(object):
             text, palette = self.state_to_text_and_palette( state.state )
             self.lbl_dict[ state.device_name ].setText( text )
             self.lbl_dict[ state.device_name ].setPalette( palette )
+
+    def save_schedule ( self, schedule ):
+        for device in self.scheds:
+            dev_sched = [ event for event in schedule if event.state.device_name == device ]
+            if not are_schedules_same( self.sched[ device ], dev_sched ):
+                self.sched[ device ] = dev_sched.copy()
+                self.cw_schedule.set_schedule( dev_sched )
+                if self.popup:
+                    self.popup.set_schedule( dev_sched )
+                self.print_schedule()
+
+    def print_schedule ( self ):
+        device = self.get_checked_output_name()
+        schedule = self.scheds[ device ]
+        self.text_output.append( device + ' EVENT SCHEDULE:' )
+        if not schedule:
+            self.text_output.append( 'No events scheduled!' )
+        for event in schedule:
+            dt = datetime.fromtimestamp( event.timestamp.seconds )
+            td_dur = timedelta( seconds=event.duration.seconds )
+            td_period = timedelta( seconds=event.period.seconds )
+            self.text_output.append( STATE_TO_TEXT[event.state.state] + 'event scheduled for ' + str( td_dur.seconds // 60 ) + ' minute(s) on ' + str( dt ) + ' repeating every ' + str( td_period.days ) + ' day(s)' )
+
+    def peak_event_log ( self ):
+        container = tool_shed.container()
+        container.peak_event_log = 10
+        self.q_out_enqueue( container )
 
     def postpone_pulse_mon ( self ):
         if self.pulse_mon.isActive():
@@ -889,6 +1018,12 @@ class Ui_MainWindow(object):
         container = messages.container()
         container.shutdown = 1
         self.q_out_enqueue( container )
+
+    def q_out_enqueue ( self, container ):
+        print( container )
+        self.q_out_lock.lock()
+        self.q_out.put( container )
+        self.q_out_lock.unlock()
 
 if __name__ == "__main__":
     import sys

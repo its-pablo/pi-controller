@@ -164,3 +164,6 @@ protoc-27.2-win64
 
 # Ignore event log
 event_log.txt
+
+# Ignore JSONs
+*.json

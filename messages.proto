@@ -43,15 +43,16 @@ message container {
 		DEVICE_STATES states = 4;
 
 		SCHEDULED_DEVICE_EVENT set_event = 5;
-		int32 get_events = 6;
-		SCHEDULED_DEVICE_EVENTS events = 7;
-		int32 no_events = 8;
-		SCHEDULED_DEVICE_EVENT cancel_event = 9;
+		string get_events = 6;
+		int32 get_all_events = 7;
+		SCHEDULED_DEVICE_EVENTS events = 8;
+		string no_events = 9;
+		SCHEDULED_DEVICE_EVENT cancel_event = 10;
 
-		int32 peak_logs = 10;
-		string logs = 11;
+		int32 peak_logs = 11;
+		string logs = 12;
 
-		string info = 12;
+		string info = 13;
 
 		DEVICE_STATE demo_override = 98;
 		int32 shutdown = 99;
