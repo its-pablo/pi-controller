@@ -226,6 +226,7 @@ class UpdateMonitor ( QtCore.QThread ):
 # Clickable label, used for secret demo mode sensor toggling
 class QClickableLabel( QtWidgets.QLabel ):
     clicked = QtCore.pyqtSignal( [ str ] )
+    device_name = ''
 
     def __init__ ( self, parent ):
         QtWidgets.QLabel.__init__( self, parent )
