@@ -93,11 +93,11 @@ def initialize_schedule ( schedule_queue, file_name ):
 
 # Get last num_lines of event log
 def peak_event_log ( num_lines, file_name ):
-		logs = ''
-		with open( file_name, 'a+', encoding='utf-8' ) as file:
-			lines = tail( file, num_lines )
-			logs = ''.join( lines )
-		return logs
+    logs = ''
+    with open( file_name, 'a+', encoding='utf-8' ) as file:
+        lines = tail( file, num_lines )
+        logs = ''.join( lines )
+    return logs
 
 # Do event instances overlap
 def does_event_overlap ( event_a_begin, event_a_duration, event_b_begin, event_b_duration ):

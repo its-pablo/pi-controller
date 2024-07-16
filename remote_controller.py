@@ -1069,8 +1069,8 @@ class Ui_MainWindow(object):
             self.text_output.append( STATE_TO_TEXT[event.state.state] + ' event scheduled for ' + str( td_dur.seconds // 60 ) + ' minute(s) on ' + str( dt ) + ' repeating every ' + str( td_period.days ) + ' day(s)' )
 
     def peak_event_log ( self ):
-        container = tool_shed.container()
-        container.peak_event_log = 10
+        container = messages.container()
+        container.peak_logs = 10
         self.q_out_enqueue( container )
 
     def day_schedule_popup ( self, date ):

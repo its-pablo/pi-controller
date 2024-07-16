@@ -262,9 +262,10 @@ class Controller:
             utils.save_schedule( self.scheds[ event.state.device_name ], self.scheds_files[ event.state.device_name ] )
 
     # Peak event log
-    def peak_event_log ( self ):
+    def peak_event_log ( self, lines ):
         container = messages.container()
-        container.logs = utils.peak_event_log( 10, EVENT_LOG_FILE_NAME )
+        container.logs = utils.peak_event_log( lines, EVENT_LOG_FILE_NAME )
+        return container
 
     # Override input, only to be used in demo mode
     def override ( self, state ):

@@ -66,7 +66,7 @@ def control_loop( q_in, q_out, kill, s_file_name_suffix, el_file_name, demo_mode
 				controller.cancel_scheduled_event( container.cancel_event )
 
 			elif container.HasField( 'peak_logs' ):
-				q_out.put( controller.peak_event_log() )
+				q_out.put( controller.peak_event_log( container.peak_logs ) )
 
 			# Secret option
 			elif container.HasField( 'demo_override' ):
