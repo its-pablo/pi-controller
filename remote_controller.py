@@ -847,7 +847,10 @@ class Ui_MainWindow(object):
         if not self.updated:
             # Hide the devices in case out of date
             for label in self.lbls_devices: label.hide()
-            for label in self.lbls_device_states: label.hide()
+            for label in self.lbls_device_states:
+                label.hide()
+                if label.receivers( label.clicked ) > 0:
+                    label.clicked.disconnect()
             for button in self.rbs_outputs: button.hide()
             # Initialize counters
             dev_count = 0
