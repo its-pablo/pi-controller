@@ -14,7 +14,7 @@ from datetime import datetime
 class Ui_DaySchedule(object):
     def setupUi(self, DaySchedule):
         DaySchedule.setObjectName("DaySchedule")
-        DaySchedule.resize(335, 550)
+        DaySchedule.resize(430, 550)
         self.verticalLayout = QtWidgets.QVBoxLayout(DaySchedule)
         self.verticalLayout.setObjectName("verticalLayout")
         self.gb_d_sched = QtWidgets.QGroupBox(parent=DaySchedule)

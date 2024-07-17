@@ -269,14 +269,15 @@ class TableModel( QtCore.QAbstractTableModel ):
         dt_today = datetime.today()
         dt_clicked = self.dt
         dt_clicked_date = dt_clicked.date()
-        self.table = list( [ [ datetime.fromtimestamp( x.timestamp.seconds ).time(), x.duration.seconds, x.period.seconds ] for x in is_event_scheduled( dt_clicked_date, self.schedule )[0] ] )
+        self.table = list( [ [ datetime.fromtimestamp( x.timestamp.seconds ).time(), x.duration.seconds, x.period.seconds, ( 1 if x.state.state == messages.STATE.DEV_ACTIVE else 0 ) ] for x in is_event_scheduled( dt_clicked_date, self.schedule )[0] ] )
 
         self.table.sort()
 
-        self.horizontalHeaders = [''] * 3
+        self.horizontalHeaders = [''] * 4
         self.setHeaderData( 0, QtCore.Qt.Orientation.Horizontal, 'TIME' )
         self.setHeaderData( 1, QtCore.Qt.Orientation.Horizontal, 'DURATION' )
         self.setHeaderData( 2, QtCore.Qt.Orientation.Horizontal, 'PERIOD' )
+        self.setHeaderData( 3, QtCore.Qt.Orientation.Horizontal, 'STATE' )
 
     def data ( self, index, role ):
         if role == QtCore.Qt.ItemDataRole.DisplayRole:
@@ -286,6 +287,8 @@ class TableModel( QtCore.QAbstractTableModel ):
                 return str( timedelta( seconds=self.table[ index.row() ][ index.column() ] ) )
             elif index.column() == 2:
                 return str( timedelta( seconds=self.table[ index.row() ][ index.column() ] ) )
+            elif index.column() == 3:
+                return str( 'ACTIVE' if self.table[ index.row() ][ index.column() ] == 1 else 'INHIBITED' )
             else:
                 return str( self.table[ index.row() ][ index.column() ] )
         elif role == QtCore.Qt.ItemDataRole.EditRole:
@@ -409,6 +412,11 @@ class DaySchedule ( QtWidgets.QDialog ):
         else:
             self.ui.sb_period.setValue( period )
             self.ui.cb_period.setCurrentText( 'sec' )
+        active_state = ( self.model.table[ index.row() ][ 3 ] == 1 )
+        if active_state:
+            self.ui.rb_activate.setChecked( True )
+        else:
+            self.ui.rb_inhibit.setChecked( True )
 ################################################################################################
 
 
