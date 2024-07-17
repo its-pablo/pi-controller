@@ -163,12 +163,10 @@ def does_schedule_conflict ( event_a, event_b ):
         event_f_timestamp = start - ( ( start - event_f_timestamp ) % event_f_period )
         # Check if they overlap
         if does_event_overlap( event_f_timestamp, event_f_duration, start, event_l_duration ):
-            print( event_f_timestamp, event_f_duration, start, event_l_period )
             return True
         # Fast forward recurring event to the nearest instance after non-recurring event
         event_f_timestamp = event_f_timestamp + event_f_period
         if does_event_overlap( event_f_timestamp, event_f_duration, start, event_l_duration ):
-            print( event_f_timestamp, event_f_duration, start, event_l_period )
             return True
 
     # Passed all checks, does not conflict

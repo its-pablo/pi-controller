@@ -107,7 +107,7 @@ class Controller:
                         self.inhibits[ device ] = True
                         print( device, 'is now inhibited' )
                         utils.log_event( device + ' IS NOW INHIBITED', self.el_file_name )
-                        # Schedule an unhibit event when the duration is up if needed
+                        # Schedule an uninhibit event when the duration is up if needed
                         if event.duration.seconds > 0:
                             new_event = messages.container.SCHEDULED_DEVICE_EVENT()
                             new_event.CopyFrom( event )

@@ -123,7 +123,7 @@ class Sender ( QtCore.QThread ):
                 try:
                     self.s_lock.lock()
                     self.s.sendall( data )
-                    time.sleep( 0.05 )
+                    time.sleep( 0.10 )
 
                 except ( ConnectionAbortedError, ConnectionResetError, ConnectionRefusedError ):
                     self.lost_conn.emit()
@@ -434,7 +434,6 @@ class QPaintableCalendarWidget( QtWidgets.QCalendarWidget ):
         self.schedule = schedule.copy()
         self.device_name = device_name
         self.updateCells()
-        self.repaint()
 
     def set_device_name ( self, device_name ):
         self.device_name = device_name
