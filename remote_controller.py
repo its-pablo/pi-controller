@@ -52,6 +52,31 @@ UNIT_TO_SECS = {
     'day': 86400
 }
 
+def get_all_instances_on_day ( date_to_check, event ):
+    dt = datetime.fromtimestamp( event.timestamp.seconds )
+    dt_date = dt.date()
+    date_to_check_as_dt = datetime.combine( date_to_check, datetime.min.time() )
+    td_period = timedelta( seconds=event.period.seconds )
+    one_day = timedelta( days=1 )
+    events_out = []
+    if date_to_check == dt_date:
+        num_times = 1 + ( ( ( date_to_check_as_dt + one_day ) - dt ) // td_period )
+        for i in range( num_times ):
+            new_event = messages.container.SCHEDULED_DEVICE_EVENT()
+            new_event.CopyFrom( event )
+            new_event.timestamp.seconds = event.timestamp.seconds + ( i * event.period.seconds )
+            events_out.append( new_event )
+    else:
+        # Fast forward to first occurrence in day
+        dt = date_to_check_as_dt - ( ( date_to_check_as_dt - dt ) % td_period ) + td_period
+        num_times = 1 + ( ( ( date_to_check_as_dt + one_day ) - dt ) // td_period )
+        for i in range( num_times ):
+            new_event = messages.container.SCHEDULED_DEVICE_EVENT()
+            new_event.CopyFrom( event )
+            new_event.timestamp.seconds = int( dt.timestamp() ) + ( i * event.period.seconds )
+            events_out.append( new_event )
+    return events_out
+
 def is_event_scheduled ( date_to_check, schedule ):
     # Is date in the past?
     dt_today = datetime.today()
@@ -70,13 +95,13 @@ def is_event_scheduled ( date_to_check, schedule ):
             td_0 = timedelta()
             # Is this event on the date to check?
             if date_to_check == dt_date:
-                times.append( event )
+                times.extend( get_all_instances_on_day( date_to_check, event ) )
                 origin = True
             elif date_to_check > dt_date and td_period > td_0:
                 td_between = date_to_check - dt_date
                 # Check if time between events a multiple of the period
                 if td_between % td_period == td_0:
-                    times.append( event )
+                    times.extend( get_all_instances_on_day( date_to_check, event ) )
 
     return ( times, origin )
 
