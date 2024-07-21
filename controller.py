@@ -253,7 +253,7 @@ class Controller:
         clean_sched = []
         event_cancelled = False
         for _, scheduled_event in self.scheds[ event.state.device_name ]:
-            if not utils.does_schedule_conflict( event, scheduled_event ):
+            if event.state.state != scheduled_event.state.state or not utils.does_schedule_conflict( event, scheduled_event ):
                 heapq.heappush( clean_sched, ( scheduled_event.timestamp.seconds, scheduled_event ) )
             else:
                 event_cancelled = True
