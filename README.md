@@ -107,6 +107,8 @@ I think the easiest way to get started is to not worry about the Pi yet and just
 	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/remote_controller_on_connect.png">
 </div>
 
+  8. You can now play around in the client UI! If you break it let me know how you did it. Read the WALKTHROUGH OF THE CLIENT UI section if you want to know what everything does.
+
 # WALKTHROUGH OF SETTING UP THE DEVICE CONFIG FOR MY DAD'S USE CASE
 
 So, as we covered before, my dad has a few sensors and output he controls over GPIO pins as well as some rules he would like applied to his outputs. I didn't go over the rules before so let me summarize them:
@@ -287,3 +289,5 @@ def PUMP_off_rule ():
 
 	return False
 ```
+
+# WALKTHROUGH OF THE CLIENT UI
