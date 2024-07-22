@@ -158,7 +158,7 @@ if __name__ == '__main__':
 		sys.exit( 0 )
 
 	# Print info
-	print( 'Starting garden_daemon with the following args:' )
+	print( 'Starting controller_daemon with the following args:' )
 	print( '\tHOST:', HOST, 'IPv4:', socket.gethostbyname( HOST ) )
 	print( '\tPORT:', PORT )
 	print( '\tSCHEDULE_FILE_NAME_SUFFIX:', SCHEDULE_FILE_NAME_SUFFIX )
