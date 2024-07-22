@@ -77,7 +77,7 @@ I think the easiest way to get started is to not worry about the Pi yet and just
      - You should only really need to install protobuf (for the messaging) and PyQt6 (for the client UI). You can install these two as follows:
        `pip install protobuf==5.27.2`
        `pip install PyQt6==6.4.2`
-  4. If you just want to see how it works, you can skip modifying the device_config.txt. However, if you have an idea of what you want to do go ahead and modify it to suit your needs. More info on modifying the device config in the WALKTHROUGH OF SETTING UP THE DEVICE CONFIG FOR MY DAD'S USE CASE section. I would recommend reading this at this stage anyways.
+  4. If you just want to see how it works, you can skip modifying the device_config.txt. However, if you have an idea of what you want to do go ahead and modify it to suit your needs. More info on modifying the device config in the [WALKTHROUGH OF SETTING UP THE DEVICE CONFIG FOR MY DAD'S USE CASE](https://github.com/its-pablo/pi-controller/tree/main#walkthrough-of-setting-up-the-device-config-for-my-dads-use-case) section. I would recommend reading this at this stage anyways.
   5. At this point you should be ready to run the controller_daemon.py server locally. Run `python .\controller_daemon.py --demo_mode True` your output should look something like this:
      ```
      Starting controller_daemon with the following args:
@@ -107,7 +107,7 @@ I think the easiest way to get started is to not worry about the Pi yet and just
 	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/remote_controller_on_connect.png">
 </div>
 
-  8. You can now play around in the client UI! If you break it let me know how you did it. Read the WALKTHROUGH OF THE CLIENT UI section if you want to know what everything does.
+  8. You can now play around in the client UI! If you break it let me know how you did it. Read the [WALKTHROUGH OF THE CLIENT UI](https://github.com/its-pablo/pi-controller/tree/main#walkthrough-of-the-client-ui) section if you want to know what everything does.
 
 # WALKTHROUGH OF SETTING UP THE DEVICE CONFIG FOR MY DAD'S USE CASE
 
