@@ -21,13 +21,23 @@ The cool thing about Pi-Controller which solves this issue is that the user can 
 
 # ARCHITECTURE
 
+Pi-Controller consists of a client and a server. The client and server are implemented using simple TCP/IP communications over a socket. This approach is suitable for a local network setup and that's what it has been tested on so far. The client and server communicate with each other by serializing the Google protocol buffer messages defined in messages.proto.
+
+## A bit more about the server:
+
+The server is run by executing controller_daemon.py. The main process of the server handles the communications and consists of two threads to handle the receiving and sending as well as a third timer thread that handles checking for a pulse from the client. By design, if no requests are received from the client for 5 seconds the server severs the connection. In addition to the main process, there is another process that handles all the control logic for the GPIO devices (including the scheduling). The two processes communicate with each other internally using [multiprocessing](https://docs.python.org/3/library/multiprocessing.html#) [Events](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Event) and [Queues](https://docs.python.org/3/library/multiprocessing.html#pipes-and-queues). There are two queues, one for handling inbound request from the client, and one for handling outbound responses from the server. The receiver thread in the main process places requests in the inbound queue and the control process consumes the requests. When needed, the control process places responses in the outbound queue which the sender thread in the main process consumes and sends to the client.
+
+## A bit more about the client:
+
+The client UI was designed using QT Designer and generally adheres to QT development framework. The client is run by executing remote_gardener.py. Within the client there are 4 threads; (1) the main thread of the UI, (2) an updater thread that handles updating the appropriate UI elements when new information is received from the server, (3) a sender thread that handles sending requests to the server, and (4) a receiver thread that handles the responses from the server. All these threads are QThreads (which is QT's flavor of threading) and communicate with each other using queues and signals and slots.
+
 # WHAT IS WHAT IN THIS REPO
 
 Let's briefly go over the files in this repo...
 
 ## Files concerning the communication between server and client:
 
-This project utilizes [Google protocol buffers](https://protobuf.dev/) to define and serialize data messages to be sent between the server and client. This allows me to definemessages that can serialized, sent, received, and deserialized between the client and server.
+This project utilizes [Google protocol buffers](https://protobuf.dev/) to define and serialize data messages to be sent between the server and client. This allows me to define messages that can serialized, sent, received, and deserialized between the client and server.
 
 ### messages.proto:
 
