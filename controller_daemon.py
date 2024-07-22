@@ -70,7 +70,8 @@ def control_loop( q_in, q_out, kill, s_file_name_suffix, el_file_name, demo_mode
 
 			# Secret option
 			elif container.HasField( 'demo_override' ):
-				controller.override( container.demo_override )
+				if demo_mode:
+					controller.override( container.demo_override )
 
 			else:
 				print( 'An unsupported message has been received' )
