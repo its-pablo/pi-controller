@@ -58,9 +58,13 @@ def get_all_instances_on_day ( date_to_check, event ):
     date_to_check_as_dt = datetime.combine( date_to_check, datetime.min.time() )
     td_period = timedelta( seconds=event.period.seconds )
     one_day = timedelta( days=1 )
+    td_0 = timedelta()
     events_out = []
     if date_to_check == dt_date:
-        num_times = 1 + ( ( ( date_to_check_as_dt + one_day ) - dt ) // td_period )
+        if td_0 != td_period:
+            num_times = 1 + ( ( ( date_to_check_as_dt + one_day ) - dt ) // td_period )
+        else:
+            num_times = 1
         for i in range( num_times ):
             new_event = messages.container.SCHEDULED_DEVICE_EVENT()
             new_event.CopyFrom( event )
@@ -69,7 +73,10 @@ def get_all_instances_on_day ( date_to_check, event ):
     else:
         # Fast forward to first occurrence in day
         dt = date_to_check_as_dt - ( ( date_to_check_as_dt - dt ) % td_period ) + td_period
-        num_times = 1 + ( ( ( date_to_check_as_dt + one_day ) - dt ) // td_period )
+        if td_0 != td_period:
+            num_times = 1 + ( ( ( date_to_check_as_dt + one_day ) - dt ) // td_period )
+        else:
+            num_times = 1
         for i in range( num_times ):
             new_event = messages.container.SCHEDULED_DEVICE_EVENT()
             new_event.CopyFrom( event )
@@ -368,7 +375,7 @@ class DaySchedule ( QtWidgets.QDialog ):
     def schedule_event ( self ):
         period = self.ui.sb_period.value() * UNIT_TO_SECS[ self.ui.cb_period.currentText() ]
         duration = self.ui.sb_dur.value() * UNIT_TO_SECS[ self.ui.cb_dur.currentText() ]
-        if period > duration:
+        if period > duration or period == 0:
             time = self.ui.te_tod.time()
             dt = datetime( year=self.dt.year, month=self.dt.month, day=self.dt.day, hour=time.hour(), minute=time.minute() )
             container = messages.container()

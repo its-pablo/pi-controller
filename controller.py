@@ -206,7 +206,7 @@ class Controller:
         dt = datetime.today()
         if int( dt.timestamp() ) > ( event.timestamp.seconds + event.duration.seconds ):
             return ( False, None )
-        if event.duration.seconds >= event.period.seconds:
+        if event.duration.seconds >= event.period.seconds and event.period.seconds != 0:
             return ( False, None )
         for _, scheduled_event in self.scheds[ event.state.device_name ]:
             #if scheduled_event.state.state != messages.STATE.DEV_INACTIVE and scheduled_event.state.state != messages.STATE.DEV_UNINHIBITED and utils.does_schedule_conflict( event, scheduled_event ):
