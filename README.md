@@ -19,7 +19,7 @@ I originally designed https://github.com/its-pablo/garden/ to address these spec
 
 The cool thing about Pi-Controller which solves this issue is that the user can define what devices they have hooked up to their Pi and some basic rules of operation for the output devices. So when the time comes my dad can just modify the device config file slightly and it should just work.
 
-# ARCHITECTURE
+# SOME NOTES ON THE ARCHITECTURE
 
 Pi-Controller consists of a client and a server. The client and server are implemented using simple TCP/IP communications over a socket. This approach is suitable for a local network setup and that's what it has been tested on so far. The client and server communicate with each other by serializing the Google protocol buffer messages defined in messages.proto.
 
@@ -255,3 +255,15 @@ def PUMP_off_rule ():
 ```
 
 # WALKTHROUGH OF THE CLIENT UI
+
+Let's go over the client's user interface! When you first run the client in step 6 of the [SETTING UP FOR A DEMO](https://github.com/its-pablo/pi-controller/tree/main#setting-up-for-a-demo) section you should have seen the following:
+
+<div align="center">
+	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/remote_controller_on_boot.png">
+</div>
+
+As you can tell, everything but the connection group box is greyed out and disabled. To interact with anything you first have to connect to the server. You can connect to the server by specifying the host name and port number of the server. Once you connect successfully, things should look similar to this:
+
+<div align="center">
+	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/remote_controller_on_connect.png">
+</div>
