@@ -101,6 +101,12 @@ I think the easiest way to get started is to not worry about the Pi yet and just
 	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/remote_controller_on_boot.png">
 </div>
 
+  7. Now you can replace the IP addy in the Host field with "localhost" and hit connect. It should connect right away, otherwise it might hang for a second and then give you some sort of error message in the output box if something goes wrong. Anyhow, here is what your client UI might look like after connecting (this will depend based on the device_config.txt!!):
+
+<div align="center">
+	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/remote_controller_on_connect.png">
+</div>
+
 # WALKTHROUGH OF SETTING UP THE DEVICE CONFIG FOR MY DAD'S USE CASE
 
 So, as we covered before, my dad has a few sensors and output he controls over GPIO pins as well as some rules he would like applied to his outputs. I didn't go over the rules before so let me summarize them:
