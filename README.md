@@ -281,4 +281,8 @@ Now for the Miscellaneous group box. The Peak Event Log button will request the 
 
 The Output group box is fairly self explanatory.
 
-The Status group box displays the status of all the devices. This is also fairly self explanatory. However, there is some secret sauce here when running in demo mode. When the client and server are both in demo mode you can actually click on an input device's status to toggle it between active and inactive! This is useful if you just want to test a proof of concept before deploying to an actual system because you can simulate different scenarios and observe whether you output are behaving according to the rules you set.
+The Status group box displays the status of all the devices. This is also fairly self explanatory. However, there is some secret sauce here when running in demo mode. When the client and server are both in demo mode you can actually click on an input device's status to toggle it between active and inactive! This is useful if you just want to test a proof of concept before deploying to an actual system because you can simulate different scenarios and observe whether you output are behaving according to the rules you set. Here is a quick example:
+
+<div align="center">
+	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/sensor_override_demo.gif">
+</div>
