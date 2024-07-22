@@ -21,7 +21,29 @@ The cool thing about Pi-Controller which solves this issue is that the user can 
 
 # WHAT IS WHAT IN THIS REPO
 
-Let's go over the files in this repo...
+Let's briefly go over the files in this repo...
+
+## Files concerning the communication between server and client:
+
+This project utilizes [Google protocol buffers](https://protobuf.dev/) to define and serialize data messages to be sent between the server and client. This allows me to definemessages that can serialized, sent, received, and deserialized between the client and server.
+
+### messages.proto:
+
+This is the definition of the messages in protobuf format. The protobuf is then compiled using the protobuf compiler.
+
+### messages_pb2.py:
+
+This is the output of compiling messages.proto, a Python file we can use to create the messages, serialize them, deserialize them, etc.
+
+## Files concerning the server:
+
+### controller.py, control_utils.py, dev_gen.py, and device_config.txt:
+
+These files together comprise the control logic for the GPIO pins.
+
+### controller_daemon.py:
+
+This program creates an instance of the Controller defined in controller.py and handles the periodic execution of the control logic. It also handles all the sending and receiving of data between server and client.
 
 ## Files concerning the client:
 
@@ -36,6 +58,14 @@ The day schedule UI file and its corresponding py file are the implementation of
 </div>
 
 ### remote_controller.ui and remote_controller.py:
+
+The remote controller UI file and its corresponding py file are the implementation of the client. The remote controller client looks as follow:
+
+<div align="center">
+	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/remote_controller.png">
+</div>
+
+# SETTING UP FOR A DEMO
 
 # HIGH LEVEL WALKTHROUGH OF SETTING UP THE DEVICE CONFIG FOR MY DAD'S USE CASE
 
