@@ -31,9 +31,9 @@ The UI was designed using QT so the client consists of a couple of UI files and 
 
 The day schedule UI file and its corresponding py file are the implementation of the day shcedule pop up. The day schedule looks as follows:
 
-<p align="center">
- ![Day schedule popup](https://github.com/its-pablo/pi-controller/blob/main/images/day_schedule.png)
-</p>
+<div align="center">
+	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/day_schedule.png">
+</div>
 
 ### remote_controller.ui and remote_controller.py:
 
