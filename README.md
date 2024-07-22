@@ -289,8 +289,20 @@ The Status group box displays the status of all the devices. This is also fairly
 
 Bonus points if you understand why the PUMP became ACTIVE when the TANK_EMPTY sensor became ACTIVE.
 
-Now for the Schedule group box. The calendar shows you at a glance how many event are scheduled on any given day for the selected device. There are no scheduled events unless you schedule some, so let's do that! Double click on a day. After double clicking on a day you should see something like this:
+Now for the Schedule group box. The calendar shows you at a glance how many event are scheduled on any given day for the selected device. There are no scheduled events unless you schedule some, so let's do that! Double click on a day. After double clicking on a day you should see something like this pop up:
 
 <div align="center">
 	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/day_schedule_blank.png">
+</div>
+
+What you are seeing is an empty schedule for the day you chose. In this popup you can schedule new events that will start on this day at the time specified, for the duration specified, and will repeat as often as indicated by the period. Some caveats about the shceduling: (1) events may not take place in the past, (2) the duration may not be greater than or equal to the period (unless the period is 0), (3) a period of 0 indicates that the event does not repeat and will only occur once, (4) the duration must be greater than 0, (5) events may not conflict with existing events. You can schedule activate events and inhibit events. The idea here comes from my dad's garden. For example, you may want to water you garden at specific intervals and times (a scheduled activate event) or maybe you want to disable the pump at night because it is noisy and you don't want to drain the solar charged battery (a scheduled inhibit event). Anyhow, try scheduling some events and it should look similar to the following:
+
+<div align="center">
+	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/day_schedule_some.png">
+</div>
+
+Now once you exit the day schedule popup you should be able to see the calendar itself also shows some information regarding the scheduled events (notable how many occur on any given day):
+
+<div align="center">
+	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/remote_controller_some.png">
 </div>
