@@ -308,3 +308,7 @@ Now once you exit the day schedule popup you should be able to see the calendar 
 </div>
 
 That about covers most of everything for the client UI. If you have any questions you can ask me.
+
+# WALKTHROUGH OF SETTING UP THE SERVER ON YOUR PI
+
+Write up in progress...
