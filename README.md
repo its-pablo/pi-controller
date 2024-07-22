@@ -262,8 +262,23 @@ Let's go over the client's user interface! When you first run the client in step
 	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/remote_controller_on_boot.png">
 </div>
 
-As you can tell, everything but the connection group box is greyed out and disabled. To interact with anything you first have to connect to the server. You can connect to the server by specifying the host name and port number of the server. Once you connect successfully, things should look similar to this:
+As you can tell, everything but the Connection group box is greyed out and disabled. To interact with anything you first have to connect to the server. You can connect to the server by specifying the host name and port number of the server. Once you connect successfully, things should look similar to this:
 
 <div align="center">
 	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/remote_controller_on_connect.png">
 </div>
+
+Now the different interfaces should be enabled and the connection box should be greyed out and disabled. As you can see, when we connected a bunch of labels appeared in the Status group box as well as some radio buttons in the Controls group box. This may look different for you! The reason is because the labels and radio buttons are set up based on the information received from the server which reflects whatever you configured in the device_config.txt file.
+
+Let's focus on the Controls group box. At the very top there is a list of device radio buttons, these correspond to the output devices you set up in your config. These radio buttons control what device you will be interacting with the controls as well as what device we are displaying the schedule for (more about the Schedule group box in a bit). Skipping the Event Duration group box for a minute... Let's have a look at the push buttons: Activate, Deactivate, Uninhibit, and Inhibit.
+  - Activate: the activate push button allows you to activate whatever output is currently being controlled. The client will send the server a request to activate the device.
+  - Deactivate: the deactivate push button allows you to deactivate whatever output is currently being controlled. The client will send the server a request to activate the device.
+  - Inhibit: the inibit push button bla bla bla. What does it mean for a device to be inhibited? When a device is inhibited we "turn it off" meaning the normal rules of operation defined in the device config will not apply while the device is inhibited and the device cannot be activated. The device will remain inhibited until it is uninhibited!
+  - Uninhibit: the uninhibit push button bla bla bla.
+The Print Schedule push button we will cover later when we go over the Schedule group box. Let's go over the Event Duration group box. When the check box in the Event Duration groub box is checked the behavior of the Activate and Inhibit push buttons is modified. When Event Duration is enabled the Activate and Inhibit actions will request the server perform the corresponding action but only for the duration specified. After the period of time specified is up, the device's state will return to normal operation (which typically means the device will return to the inactive state).
+
+Now for the Miscellaneous group box. The Peak Event Log button will request the last 10 events logged by the server, this will contain any record of activations, deactivations, inhibitions, or uninhibitions by any of the devices. The Shutdown button is not typically available and is only there because we are running in demo mode! The Shutdown button send the server a request to shutdown. This is only really useful during debugging, testing, and demoing since you might run into issues and what to restart the server. Typically the server is expected to be running 24/7. The About button simply prints some info about the version, the name of the author (that's me) and my email address if you have questions.
+
+The Output group box is fairly self explanatory.
+
+The Status group box displays the status of all the devices. This is also fairly self explanatory. However, there is some secret sauce here when running in demo mode. When the client and server are both in demo mode you can actually click on an input device's status to toggle it between active and inactive! This is useful if you just want to test a proof of concept before deploying to an actual system because you can simulate different scenarios and observe whether you output are behaving according to the rules you set.
