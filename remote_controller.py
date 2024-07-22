@@ -348,6 +348,7 @@ class TableModel( QtCore.QAbstractTableModel ):
 # Wrap day schedule
 class DaySchedule ( QtWidgets.QDialog ):
     send_signal = QtCore.pyqtSignal( [ messages.container ] )
+    print_info_signal = QtCore.pyqtSignal( [ str ] )
     schedule = []
     device_name = ''
 
@@ -367,20 +368,23 @@ class DaySchedule ( QtWidgets.QDialog ):
     def schedule_event ( self ):
         period = self.ui.sb_period.value() * UNIT_TO_SECS[ self.ui.cb_period.currentText() ]
         duration = self.ui.sb_dur.value() * UNIT_TO_SECS[ self.ui.cb_dur.currentText() ]
-        time = self.ui.te_tod.time()
-        dt = datetime( year=self.dt.year, month=self.dt.month, day=self.dt.day, hour=time.hour(), minute=time.minute() )
-        container = messages.container()
-        container.set_event.timestamp.seconds = int( dt.timestamp() )
-        container.set_event.duration.seconds = duration
-        container.set_event.period.seconds = period
-        container.set_event.state.device_name = self.device_name
-        if self.ui.rb_activate.isChecked(): container.set_event.state.state = messages.STATE.DEV_ACTIVE
-        if self.ui.rb_inhibit.isChecked(): container.set_event.state.state = messages.STATE.DEV_INHIBITED
-        container.set_event.state.is_output = True
-        self.send_signal.emit( container )
-        container = messages.container()
-        container.get_events = self.device_name
-        self.send_signal.emit( container )
+        if period > duration:
+            time = self.ui.te_tod.time()
+            dt = datetime( year=self.dt.year, month=self.dt.month, day=self.dt.day, hour=time.hour(), minute=time.minute() )
+            container = messages.container()
+            container.set_event.timestamp.seconds = int( dt.timestamp() )
+            container.set_event.duration.seconds = duration
+            container.set_event.period.seconds = period
+            container.set_event.state.device_name = self.device_name
+            if self.ui.rb_activate.isChecked(): container.set_event.state.state = messages.STATE.DEV_ACTIVE
+            if self.ui.rb_inhibit.isChecked(): container.set_event.state.state = messages.STATE.DEV_INHIBITED
+            container.set_event.state.is_output = True
+            self.send_signal.emit( container )
+            container = messages.container()
+            container.get_events = self.device_name
+            self.send_signal.emit( container )
+        else:
+            self.print_info_signal.emit( 'The period must be greater than the duration, failed to schedule event!' )
 
     def unschedule_event ( self ):
         period = self.ui.sb_period.value() * UNIT_TO_SECS[ self.ui.cb_period.currentText() ]
@@ -1111,6 +1115,7 @@ class Ui_MainWindow(object):
         self.popup = DaySchedule( self.centralwidget, self.cw_schedule.schedule, dt=dt, device_name=device_name )
         self.popup.setWindowTitle( str( dt.date() ) + ' Schedule for ' + device_name )
         self.popup.send_signal.connect( self.q_out_enqueue )
+        self.popup.print_info_signal.connect( self.text_output.append )
         self.popup.exec()
 
     def postpone_pulse_mon ( self ):
