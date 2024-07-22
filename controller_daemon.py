@@ -50,9 +50,14 @@ def control_loop( q_in, q_out, kill, s_file_name_suffix, el_file_name, demo_mode
 
 			elif container.HasField( 'set_event' ):
 				success, conflicting_event = controller.schedule_event( container.set_event )
-				if not success:
+				if not success and conflicting_event is not None:
 					container = messages.container()
 					msg = 'Failed to schedule event, conflicted with another event!'
+					container.info = msg
+					q_out.put( container )
+				elif not success:
+					container = messages.container()
+					msg = 'Failed to schedule event, event already expired or duration greater than period!'
 					container.info = msg
 					q_out.put( container )
 			
