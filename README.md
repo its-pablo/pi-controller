@@ -286,3 +286,11 @@ The Status group box displays the status of all the devices. This is also fairly
 <div align="center">
 	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/sensor_override_demo.gif">
 </div>
+
+Bonus points if you understand why the PUMP became ACTIVE when the TANK_EMPTY sensor became ACTIVE.
+
+Now for the Schedule group box. The calendar shows you at a glance how many event are scheduled on any given day for the selected device. There are no scheduled events unless you schedule some, so let's do that! Double click on a day. After double clicking on a day you should see something like this:
+
+<div align="center">
+	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/day_schedule_blank.png">
+</div>
