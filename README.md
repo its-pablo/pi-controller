@@ -19,6 +19,8 @@ I originally designed https://github.com/its-pablo/garden/ to address these spec
 
 The cool thing about Pi-Controller which solves this issue is that the user can define what devices they have hooked up to their Pi and some basic rules of operation for the output devices. So when the time comes my dad can just modify the device config file slightly and it should just work.
 
+# ARCHITECTURE
+
 # WHAT IS WHAT IN THIS REPO
 
 Let's briefly go over the files in this repo...
@@ -67,7 +69,39 @@ The remote controller UI file and its corresponding py file are the implementati
 
 # SETTING UP FOR A DEMO
 
-# HIGH LEVEL WALKTHROUGH OF SETTING UP THE DEVICE CONFIG FOR MY DAD'S USE CASE
+I think the easiest way to get started is to not worry about the Pi yet and just set up a demo on your local machine running both the client and server. The assumption here is that you are familiar with Python to some extent and that your machine has python and pip installed. For awareness, I am running Python 3.10.6 as of writing this README and you probably will have to run at least 3.9 (I used math.lcm which was added in 3.9). Also, I am using a Windows machine, but my dad is on Mac and hasn't had any issues on his end. Anyhow, here is a step by step of how to get set up:
+  1. Download the latest release or clone the repository to your machine.
+  2. Open a terminal in the directory containing the source code.
+  3. Install the dependencies; you have two options here:
+     - You could just install the exact same stuff that's on my machine by running `pip install -r requirements.txt`, HOWEVER...
+     - You should only really need to install protobuf (for the messaging) and PyQt6 (for the client UI). You can install these two as follows:
+       `pip install protobuf==5.27.2`
+       `pip install PyQt6==6.4.2`
+  4. If you just want to see how it works, you can skip modifying the device_config.txt. However, if you have an idea of what you want to do go ahead and modify it to suit your needs. More info on modifying the device config in the WALKTHROUGH OF SETTING UP THE DEVICE CONFIG FOR MY DAD'S USE CASE section. I would recommend reading this at this stage anyways.
+  5. At this point you should be ready to run the controller_daemon.py server locally. Run `python .\controller_daemon.py --demo_mode True` your output should look something like this:
+     ```
+     Starting controller_daemon with the following args:
+        HOST: localhost IPv4: 127.0.0.1
+        PORT: 50007
+        SCHEDULE_FILE_NAME_SUFFIX: _schedule.json
+        EVENT_LOG_FILE_NAME: some\path\event_log.txt
+        DEMO_MODE: True
+     controller_daemon verion 0.1 is now running!
+     PID: 36704
+     Attempting to bind socket
+     Socket is bound to:
+     ('127.0.0.1', 50007)
+     Socket is listening
+     Controller process is running
+     PID: 4896
+     ```
+  6. On a separate terminal, you'll want to run the client UI. Run `python .\remote_controller.py --demo_mode True`. After a second or two you should see the UI:
+
+<div align="center">
+	<img src="https://github.com/its-pablo/pi-controller/blob/main/images/remote_controller_on_boot.png">
+</div>
+
+# WALKTHROUGH OF SETTING UP THE DEVICE CONFIG FOR MY DAD'S USE CASE
 
 So, as we covered before, my dad has a few sensors and output he controls over GPIO pins as well as some rules he would like applied to his outputs. I didn't go over the rules before so let me summarize them:
  - Rules for the PUMP:
