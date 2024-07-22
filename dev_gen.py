@@ -68,11 +68,12 @@ def gen_devices ( demo_mode=False, config_file_name=CONFIG_FILE, module_file_nam
             write_line( 'def get_status ( device ):' )
             write_line( 'return device.is_active', 1 )
 
-            # Create dummy setter for demo mode
-            write_line()
-            write_line( '# Dummy setter for demo mode' )
-            write_line( 'def dummy_set_status ( device, status ):' )
-            write_line( 'device.is_active = status', 1 )
+            if demo_mode:
+                # Create dummy setter for demo mode
+                write_line()
+                write_line( '# Dummy setter for demo mode' )
+                write_line( 'def dummy_set_status ( device, status ):' )
+                write_line( 'device.is_active = status', 1 )
 
             # Create status setter
             write_line()
