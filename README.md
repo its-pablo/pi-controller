@@ -158,7 +158,7 @@ devices[ 'DRY' ] = [ False, lambda: get_status( DRY ), None, None, None ]
 
 ```
 
-As you can see, the output devices and input devices are initialized as their corresponding GPIO types on the specified pins, etc. What is probably most interesting here is the how the on and off rules become functions. The following rules:
+As you can see, the output devices and input devices are initialized as their corresponding GPIO types on the specified pins, etc. I don't want to get into the implementation details too much, but what is probably most interesting here is how the on and off rules become functions. The following rules:
 
 ```
 #RULES
