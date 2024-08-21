@@ -29,7 +29,7 @@ The server is run by executing controller_daemon.py. The main process of the ser
 
 ## A bit more about the client:
 
-The client UI was designed using QT Designer and generally adheres to QT development framework. The client is run by executing remote_gardener.py. Within the client there are 4 threads; (1) the main thread of the UI, (2) an updater thread that handles updating the appropriate UI elements when new information is received from the server, (3) a sender thread that handles sending requests to the server, and (4) a receiver thread that handles the responses from the server. All these threads are QThreads (which is QT's flavor of threading) and communicate with each other using queues and signals and slots.
+The client UI was designed using QT Designer and generally adheres to QT development framework. The client is run by executing remote_controller.py. Within the client there are 4 threads; (1) the main thread of the UI, (2) an updater thread that handles updating the appropriate UI elements when new information is received from the server, (3) a sender thread that handles sending requests to the server, and (4) a receiver thread that handles the responses from the server. All these threads are QThreads (which is QT's flavor of threading) and communicate with each other using queues and signals and slots.
 
 # SETTING UP FOR A DEMO
 
