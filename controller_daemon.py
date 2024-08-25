@@ -5,6 +5,7 @@ import messages_pb2 as messages
 import multiprocessing as mp
 import os
 import queue
+import rsa
 import socket
 import sys
 import threading
@@ -19,9 +20,12 @@ HOST = 'localhost'
 PORT = 50007
 SCHEDULE_FILE_NAME_SUFFIX = '_schedule.json'
 EVENT_LOG_FILE_NAME = Path( __file__ ).resolve().parent / 'event_log.txt'
+PSWD_HASH_FILE_NAME = 'pswd'
+KEY_SIZE = 2048
 DEMO_MODE = False
 MUTE_HEARTBEAT = True
 ENABLE_TIMING = False
+AUTH = False
 
 ###############################################################################
 # Process that handles the control and requests
@@ -107,6 +111,7 @@ if __name__ == '__main__':
 		print( '\t--schedule_files_suffix [-sfs] FILE_NAME' )
 		print( '\t--log_file [-lf] FILE_NAME' )
 		print( '\t--demo_mode [-dm] DEMO_MODE, True or False' )
+		print( '\t--set_password [-sp] PASSWORD, a string to use as password' )
 	# Check arguments
 	if len( sys.argv ) == 2 and sys.argv[1] == '--help':
 		print_argv_options()
@@ -148,6 +153,13 @@ if __name__ == '__main__':
 				else:
 					print( 'DEMO_MODE not True or False' )
 					sys.exit( 0 )
+			elif arg_opt == '--set_password' or arg_opt == '-sp':
+				password = arg_val.encode( 'utf-8' )
+				hashword = rsa.compute_hash( password, 'SHA-1' )
+				with open( PSWD_HASH_FILE_NAME, 'wb' ) as pswd_file:
+					pswd_file.write( hashword )
+				print( 'Password set! Please restart controller.' )
+				sys.exit( 0 )
 			else:
 				print( 'Unrecognized argument:', arg_opt, arg_val )
 				print_argv_options()
@@ -170,6 +182,13 @@ if __name__ == '__main__':
 	print( '\tSCHEDULE_FILE_NAME_SUFFIX:', SCHEDULE_FILE_NAME_SUFFIX )
 	print( '\tEVENT_LOG_FILE_NAME:', EVENT_LOG_FILE_NAME )
 	print( '\tDEMO_MODE:', DEMO_MODE )
+
+	# If password file does not exist create empty password
+	if not os.path.isfile( PSWD_HASH_FILE_NAME ):
+		password = ''.encode( 'utf-8' )
+		hashword = rsa.compute_hash( password, 'SHA-1' )
+		with open( PSWD_HASH_FILE_NAME, 'wb' ) as pswd_file:
+			pswd_file.write( hashword )
 
 	# Set up process safe queues
 	q_in = mp.Queue() # This queue is going to hold the incoming messages from the client
@@ -207,6 +226,9 @@ if __name__ == '__main__':
 		# Turn on the controller process
 		controller_process = mp.Process( target=control_loop, daemon=True, args=( q_in, q_out, kill, SCHEDULE_FILE_NAME_SUFFIX, EVENT_LOG_FILE_NAME, DEMO_MODE ), name='controller_process' )
 		controller_process.start()
+
+		# Create new keys to the kingdom
+		( pubkey, privkey ) = rsa.newkeys( KEY_SIZE )
 
 		s.listen( 1 )
 		print( 'Socket is listening' )
@@ -252,6 +274,11 @@ if __name__ == '__main__':
 		sender_thread.start()
 		##############################################################
 
+		# Queue a message to send the public RSA key to the client
+		container = messages.container()
+		container.pubkey = pubkey.save_pkcs1( 'PEM' )
+		q_out.put( container )
+
 		###########################################################################
 		# Timer thread that signals shutting down connection when no pulse detected
 		def pulse_mon ():
@@ -270,7 +297,6 @@ if __name__ == '__main__':
 			dt_max = 0.0
 		while True:
 			# Timing section, useful to perform analysis on how many requests per seconds we can accomodate
-			# right now can accomate about 4 to 5 requests per second in the worst case
 			if ENABLE_TIMING:
 				t0 = t1
 				t1 = time.time()
@@ -327,6 +353,12 @@ if __name__ == '__main__':
 				print( 'Socket is still bound to:' )
 				print( s.getsockname() )
 
+				# Create new keys to the kingdom
+				( pubkey, privkey ) = rsa.newkeys( KEY_SIZE )
+
+				# Reset auth status to False
+				AUTH = False
+
 				# Listen for new connection
 				s.listen( 1 )
 				print( 'Socket is listening' )
@@ -345,6 +377,11 @@ if __name__ == '__main__':
 				sender_thread = threading.Thread( target=sender, daemon=True )
 				sender_thread.start()
 
+				# Queue a message to send the public RSA key to the client
+				container = messages.container()
+				container.pubkey = pubkey.save_pkcs1( 'PEM' )
+				q_out.put( container )
+
 				# Restart the pulse monitor timer, 5 second interval
 				pulse_timer = threading.Timer( interval=5, function=pulse_mon )
 				pulse_timer.start()
@@ -361,29 +398,45 @@ if __name__ == '__main__':
 					
 					# Only process data if meaningful non-empty
 					if data:
-						# Clear no pulse signal since we have pulse
-						no_pulse.clear()
-
-						# Restart the 5 second pulse monitor
-						pulse_timer.cancel()
-						pulse_timer = threading.Timer( interval=5, function=pulse_mon )
-						pulse_timer.start()
-
 						try:
 							# Parse received message
 							container = messages.container()
 							container.ParseFromString( data )
-							# If a heartbeat message ignore
-							if container.HasField( 'heartbeat' ):
-								if not MUTE_HEARTBEAT:
-									print( 'Heartbeat!' )
-							# If a shutdown message, send kill signal
-							elif container.HasField( 'shutdown' ):
-								print( 'Killing' )
-								kill.set()
+
+							# If a password, check to authenticate
+							if container.HasField( 'password' ):
+								recv_pswd = rsa.decrypt( container.password, privkey )
+								with open( PSWD_HASH_FILE_NAME, 'rb' ) as pswd_file:
+									pswd = pswd_file.read()
+									if recv_pswd == pswd:
+										AUTH = True
+										container.auth = True
+										q_out.put( container )
+									else:
+										AUTH = False
+										container.auth = False
+										q_out.put( container )
+										lost_conn.set()
 							# Else, let the controller process handle it
-							else:
-								q_in.put( container )
+							elif AUTH:
+								# Clear no pulse signal since we have pulse
+								no_pulse.clear()
+
+								# Restart the 5 second pulse monitor
+								pulse_timer.cancel()
+								pulse_timer = threading.Timer( interval=5, function=pulse_mon )
+								pulse_timer.start()
+
+								# If a heartbeat message ignore
+								if container.HasField( 'heartbeat' ):
+									if not MUTE_HEARTBEAT:
+										print( 'Heartbeat!' )
+								# If a shutdown message, send kill signal
+								elif container.HasField( 'shutdown' ):
+									print( 'Killing' )
+									kill.set()
+								else:
+									q_in.put( container )
 
 						except DecodeError:
 							print( 'Was not able to parse message!' )

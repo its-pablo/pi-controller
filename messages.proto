@@ -54,6 +54,10 @@ message container {
 
 		string info = 13;
 
+		bytes pubkey = 14;
+		bytes password = 15;
+		bool auth = 16;
+
 		DEVICE_STATE demo_override = 98;
 		int32 shutdown = 99;
 	}

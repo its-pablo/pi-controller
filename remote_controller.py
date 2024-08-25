@@ -9,9 +9,10 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 # Imports
-import time
 import queue
+import rsa
 import socket
+import time
 import messages_pb2 as messages
 from google.protobuf.message import DecodeError
 from datetime import timedelta
@@ -226,6 +227,8 @@ class UpdateMonitor ( QtCore.QThread ):
     device_update_signal = QtCore.pyqtSignal( [ messages.container.DEVICE_STATES ] )
     print_info_signal = QtCore.pyqtSignal( [ str ] )
     save_schedule = QtCore.pyqtSignal( [ list ] )
+    save_key = QtCore.pyqtSignal( [ bytes ] )
+    authenticated = QtCore.pyqtSignal( [ bool ] )
 
     def __init__ ( self, q_in, q_in_lock ):
         QtCore.QThread.__init__( self )
@@ -265,6 +268,12 @@ class UpdateMonitor ( QtCore.QThread ):
 
                 elif container.HasField( 'info' ):
                     self.print_info_signal.emit( container.info )
+
+                elif container.HasField( 'pubkey' ):
+                    self.save_key.emit( container.pubkey )
+
+                elif container.HasField( 'auth' ):
+                    self.authenticated.emit( container.auth )
 
             else:
                 self.q_in_lock.unlock()
@@ -533,21 +542,9 @@ class Ui_MainWindow(object):
         self.gb_connection.setObjectName("gb_connection")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.gb_connection)
         self.gridLayout_2.setObjectName("gridLayout_2")
-        self.lbl_host = QtWidgets.QLabel(parent=self.gb_connection)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lbl_host.sizePolicy().hasHeightForWidth())
-        self.lbl_host.setSizePolicy(sizePolicy)
-        self.lbl_host.setObjectName("lbl_host")
-        self.gridLayout_2.addWidget(self.lbl_host, 0, 1, 1, 1)
         self.lbl_port = QtWidgets.QLabel(parent=self.gb_connection)
         self.lbl_port.setObjectName("lbl_port")
         self.gridLayout_2.addWidget(self.lbl_port, 2, 1, 1, 1)
-        self.txt_port = QtWidgets.QLineEdit(parent=self.gb_connection)
-        self.txt_port.setMaximumSize(QtCore.QSize(100, 16777215))
-        self.txt_port.setObjectName("txt_port")
-        self.gridLayout_2.addWidget(self.txt_port, 2, 2, 1, 1)
         self.txt_host = QtWidgets.QLineEdit(parent=self.gb_connection)
         self.txt_host.setMaximumSize(QtCore.QSize(100, 16777215))
         self.txt_host.setText("")
@@ -556,7 +553,26 @@ class Ui_MainWindow(object):
         self.btn_connect = QtWidgets.QPushButton(parent=self.gb_connection)
         self.btn_connect.setEnabled(True)
         self.btn_connect.setObjectName("btn_connect")
-        self.gridLayout_2.addWidget(self.btn_connect, 3, 1, 1, 2)
+        self.gridLayout_2.addWidget(self.btn_connect, 4, 1, 1, 2)
+        self.txt_port = QtWidgets.QLineEdit(parent=self.gb_connection)
+        self.txt_port.setMaximumSize(QtCore.QSize(100, 16777215))
+        self.txt_port.setObjectName("txt_port")
+        self.gridLayout_2.addWidget(self.txt_port, 2, 2, 1, 1)
+        self.lbl_host = QtWidgets.QLabel(parent=self.gb_connection)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.lbl_host.sizePolicy().hasHeightForWidth())
+        self.lbl_host.setSizePolicy(sizePolicy)
+        self.lbl_host.setObjectName("lbl_host")
+        self.gridLayout_2.addWidget(self.lbl_host, 0, 1, 1, 1)
+        self.lbl_pswd = QtWidgets.QLabel(parent=self.gb_connection)
+        self.lbl_pswd.setObjectName("lbl_pswd")
+        self.gridLayout_2.addWidget(self.lbl_pswd, 3, 1, 1, 1)
+        self.txt_pswd = QtWidgets.QLineEdit(parent=self.gb_connection)
+        self.txt_pswd.setMaximumSize(QtCore.QSize(100, 16777215))
+        self.txt_pswd.setObjectName("txt_pswd")
+        self.gridLayout_2.addWidget(self.txt_pswd, 3, 2, 1, 1)
         self.verticalLayout_3.addWidget(self.gb_connection)
         self.gb_controls = QtWidgets.QGroupBox(parent=self.widget_controls)
         self.gb_controls.setObjectName("gb_controls")
@@ -746,6 +762,8 @@ class Ui_MainWindow(object):
         self.updater.device_update_signal.connect( self.device_update )
         self.updater.print_info_signal.connect( self.text_output.append )
         self.updater.save_schedule.connect( self.save_schedule )
+        self.updater.save_key.connect( self.authenticate )
+        self.updater.authenticated.connect( self.authenticated )
         self.updater.start()
 
         # Dictionaries for generated labels and radio buttons and schedules
@@ -806,6 +824,12 @@ class Ui_MainWindow(object):
         # Initialize popup to None
         self.popup = None
 
+        # Initialize pubkey to None
+        self.pubkey = None
+
+        # Set password line edit to password mode echo
+        self.txt_pswd.setEchoMode( QtWidgets.QLineEdit.EchoMode.Password )
+
         # Print about text
         self.about()
 
@@ -813,9 +837,10 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Remote Controller"))
         self.gb_connection.setTitle(_translate("MainWindow", "Connection"))
-        self.lbl_host.setText(_translate("MainWindow", "Host:"))
         self.lbl_port.setText(_translate("MainWindow", "Port:"))
         self.btn_connect.setText(_translate("MainWindow", "Connect"))
+        self.lbl_host.setText(_translate("MainWindow", "Host:"))
+        self.lbl_pswd.setText(_translate("MainWindow", "Password:"))
         self.gb_controls.setTitle(_translate("MainWindow", "Controls"))
         self.gb_dur.setTitle(_translate("MainWindow", "Event Duration"))
         self.cmb_dur.setPlaceholderText(_translate("MainWindow", "min"))
@@ -859,8 +884,32 @@ class Ui_MainWindow(object):
             # Start comms threads
             self.sender.start()
             self.receiver.start()
-            self.heartbeat.start( 250 )
             self.pulse_mon.start( 5000 )
+
+        except ValueError:
+            self.text_output.append( 'Port is not an integer' )
+
+        except TimeoutError:
+            self.text_output.append( 'Failed to connect to host' )
+
+        except ConnectionRefusedError:
+            self.text_output.append( 'Connection was refused' )
+
+        except socket.gaierror as e:
+            self.text_output.append( str( e ) )
+
+    def authenticate ( self, pemkey ):
+        self.pubkey = rsa.PublicKey.load_pkcs1( pemkey, 'PEM' )
+        password = self.txt_pswd.text().encode( 'utf-8' )
+        hashword = rsa.compute_hash( password, 'SHA-1' )
+        encrypted = rsa.encrypt( hashword, self.pubkey )
+        container = messages.container()
+        container.password = encrypted
+        self.q_out_enqueue( container )
+
+    def authenticated ( self, auth ):
+        if auth:
+            self.heartbeat.start( 250 )
 
             # If none of that raised an exception then we connected
             self.gb_connection.setEnabled( False )
@@ -874,20 +923,8 @@ class Ui_MainWindow(object):
             # Get device updates
             self.get_device_updates()
 
-            # Get event schedule
-            #self.get_schedule()
-
-        except ValueError:
-            self.text_output.append( 'Port is not an integer' )
-
-        except TimeoutError:
-            self.text_output.append( 'Failed to connect to host' )
-
-        except ConnectionRefusedError:
-            self.text_output.append( 'Connection was refused' )
-
-        except socket.gaierror as e:
-            self.text_output.append( str( e ) )
+        else:
+            self.disconnect()
 
     def disconnect ( self ):
         # Stop timers

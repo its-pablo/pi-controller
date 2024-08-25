@@ -66,33 +66,10 @@
           <string>Connection</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="1">
-           <widget class="QLabel" name="lbl_host">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Host:</string>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="1">
            <widget class="QLabel" name="lbl_port">
             <property name="text">
              <string>Port:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QLineEdit" name="txt_port">
-            <property name="maximumSize">
-             <size>
-              <width>100</width>
-              <height>16777215</height>
-             </size>
             </property>
            </widget>
           </item>
@@ -109,13 +86,53 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="1" colspan="2">
+          <item row="4" column="1" colspan="2">
            <widget class="QPushButton" name="btn_connect">
             <property name="enabled">
              <bool>true</bool>
             </property>
             <property name="text">
              <string>Connect</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QLineEdit" name="txt_port">
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="lbl_host">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Host:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="lbl_pswd">
+            <property name="text">
+             <string>Password:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QLineEdit" name="txt_pswd">
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -364,7 +381,7 @@
             <x>0</x>
             <y>0</y>
             <width>621</width>
-            <height>273</height>
+            <height>245</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_7">

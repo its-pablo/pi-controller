@@ -170,3 +170,6 @@ event_log.txt
 
 # Ignored autogenned devices.py
 devices.py
+
+# Ignore pswd file
+pswd
