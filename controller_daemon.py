@@ -15,13 +15,13 @@ from google.protobuf.message import DecodeError
 from pathlib import Path
 
 # Important constants
-VERSION = '0.1'
+VERSION = '0.2'
 HOST = 'localhost'
 PORT = 50007
 SCHEDULE_FILE_NAME_SUFFIX = '_schedule.json'
 EVENT_LOG_FILE_NAME = Path( __file__ ).resolve().parent / 'event_log.txt'
-PSWD_HASH_FILE_NAME = 'pswd'
-KEY_SIZE = 2048
+PSWD_HASH_FILE_NAME = Path( __file__ ).resolve().parent / 'pswd'
+KEY_SIZE = 1024
 DEMO_MODE = False
 MUTE_HEARTBEAT = True
 ENABLE_TIMING = False

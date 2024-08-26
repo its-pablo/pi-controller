@@ -22,7 +22,7 @@ from day_schedule import Ui_DaySchedule
 # Connection variables
 HOST = '192.168.1.178'
 PORT = 50007
-VERSION = '0.1'
+VERSION = '0.2'
 ABOUT_STR = 'Remote Controller v' + VERSION + ' created by Pablo Garcia Beltran (pablopgb.pgb@gmail.com)'
 DEMO_MODE = False
 
@@ -909,7 +909,7 @@ class Ui_MainWindow(object):
 
     def authenticated ( self, auth ):
         if auth:
-            self.heartbeat.start( 250 )
+            self.heartbeat.start( 500 )
 
             # If none of that raised an exception then we connected
             self.gb_connection.setEnabled( False )
