@@ -733,9 +733,10 @@ class Ui_MainWindow(object):
         self.txt_host.setText( HOST )
         self.txt_port.setText( str( PORT ) )
 
-        # Connect host and port to connect on enter
+        # Connect host and port and pswd to connect on enter
         self.txt_host.returnPressed.connect( self.connect )
         self.txt_port.returnPressed.connect( self.connect )
+        self.txt_pswd.returnPressed.connect( self.connect )
 
         # Hide shutdown button if not in demo mode
         if not self.demo_mode:
